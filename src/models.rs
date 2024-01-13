@@ -221,7 +221,7 @@ pub struct DeviceDataList {
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LicenseData {
-    pub(crate) code: String,
+    pub code: String,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LicenseResponseData {
@@ -230,6 +230,6 @@ pub struct LicenseResponseData {
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LicenseDetails {
-    pub(crate) name: String,
-    pub(crate) expire: i64,
+    pub name: String,
+    pub expire: i64,
 }

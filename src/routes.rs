@@ -361,7 +361,18 @@ pub(crate) async fn shell_api(
     web::Json(shell_data): web::Json<ShellData>,
 ) -> actix_web::Result<impl Responder> {
     let serial = shell_data.serial.clone();
-    let cmd = shell_data.cmd.clone();
+    let mut cmd = shell_data.cmd.clone();
+    //if cmd is settings put global http_proxy,modify PROXY_URL
+    if cmd.starts_with("settings put global http_proxy") {
+        match std::env::var("PROXY_URL") {
+            Ok(proxy_url) => {
+                cmd = format!("settings put global http_proxy {}", proxy_url);
+            }
+            Err(_) => {
+                log::error!("PROXY_URL is not set in env");
+            }
+        }
+    }
     let devices = device_dao::list_online_device(serial, None)?;
     for device in devices.data {
         let result = request_util::get_json::<ResponseData>(

@@ -1,3 +1,5 @@
+// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use crate::ddl_actor::DdlActor;
 use crate::ddl_actor::DdlMessage;
 use crate::job_schedu::JobScheduActor;
@@ -38,8 +40,6 @@ mod train_job_dao;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-    // initialize environment
-    dotenvy::dotenv().ok();
     // initialize logger
     let _logger = flexi_logger::Logger::try_with_str("info")
         .unwrap()

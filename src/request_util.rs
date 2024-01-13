@@ -20,7 +20,7 @@ pub async fn get_json<T: DeserializeOwned>(host: &str, url_path: &str) -> Result
     let json: T = match serde_json::from_str(&text) {
         Ok(json) => json,
         Err(e) => {
-            log::error!("Failed to parse response as JSON: {:?}", e);
+            log::error!("Failed to parse response as JSON: {:?}", text);
             return Err(e.into());
         }
     };
