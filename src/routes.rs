@@ -373,6 +373,26 @@ pub(crate) async fn shell_api(
             }
         }
     }
+    //if am start -n com.github.uiautomator/.ToastActivity -e language en -e timezone Europe/London
+    if cmd.contains("language") && cmd.contains("timezone") {
+        match std::env::var("COUNTRY") {
+            Ok(country) => match country.as_str() {
+                // convert String to &str here
+                "US" => {
+                    cmd = format!("am start -n com.github.uiautomator/.ToastActivity -e language en -e timezone America/New_York");
+                }
+                "UK" => {
+                    cmd = format!("am start -n com.github.uiautomator/.ToastActivity -e language en -e timezone Europe/London");
+                }
+                _ => {
+                    log::error!("COUNTRY is not set to a recognized value");
+                }
+            },
+            Err(_) => {
+                log::error!("COUNTRY is not set in env");
+            }
+        }
+    }
     let devices = device_dao::list_online_device(serial, None)?;
     for device in devices.data {
         let result = request_util::get_json::<ResponseData>(

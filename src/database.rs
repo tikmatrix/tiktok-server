@@ -104,14 +104,27 @@ pub fn create_databases() -> Result<(), RunTimeError> {
     )?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS dialog_watcher (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          conditions TEXT NOT NULL,
-          action TEXT NOT NULL,
-          status INTEGER NOT NULL DEFAULT 0,
-          create_time TEXT DEFAULT CURRENT_TIMESTAMP
-        );",
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        conditions TEXT NOT NULL,
+        action TEXT NOT NULL,
+        status INTEGER NOT NULL DEFAULT 0,
+        create_time TEXT DEFAULT CURRENT_TIMESTAMP
+      );",
         (),
     )?;
+
+    let count: i64 = conn.query_row("SELECT COUNT(*) FROM dialog_watcher", [], |row| row.get(0))?;
+
+    if count == 0 {
+        //insert init data to dialog_watcher
+        log::info!("insert init data to dialog_watcher");
+
+        conn.execute(
+        "INSERT INTO dialog_watcher (name, conditions, action,status) VALUES ('init1', 'DENY,ALLOW', 'click',1);",
+        (),
+      )?;
+    }
+
     Ok(())
 }
