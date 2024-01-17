@@ -9,6 +9,7 @@ pub struct AccountData {
     pub fans: i32,
     pub shop_creator: i32,
     pub device: Option<String>,
+    pub username: Option<String>,
     pub group_id: Option<i32>,
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -19,6 +20,7 @@ pub struct AccountDetails {
     pub fans: i32,
     pub shop_creator: i32,
     pub device: Option<String>,
+    pub username: Option<String>,
     pub group_id: Option<i32>,
 }
 #[derive(Debug, Deserialize, Serialize)]

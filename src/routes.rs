@@ -38,7 +38,9 @@ pub(crate) async fn update_account_api(
     web::Json(account_data): web::Json<AccountData>,
 ) -> actix_web::Result<impl Responder> {
     web::block(move || account_dao::update(&conn, account_data)).await??;
-    Ok(HttpResponse::NoContent())
+    Ok(web::Json(ResponseData {
+        data: "ok".to_string(),
+    }))
 }
 
 #[get("/api/account")]

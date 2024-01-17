@@ -45,7 +45,7 @@ pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
     let mut stmt = conn.prepare("
     SELECT train_job.id,train_job.group_id,train_job.account,train_job.click,train_job.follow,train_job.favorites,train_job.status,train_job.start_time,train_job.end_time,account.device FROM train_job
     left join account on train_job.account = account.email
-    ORDER BY train_job.id DESC
+    ORDER BY train_job.id DESC LIMIT 200
     ")?;
     let mut data = Vec::new();
     let job_iter = stmt.query_map((), |row| {

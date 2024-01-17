@@ -8,7 +8,7 @@ pub fn save(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), Ru
     let _lock = conn.lock();
     let conn = database::get_conn()?;
     conn.execute(
-        "INSERT INTO publish_job (material, account, title, tags, status, start_time,publish_type,product_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO publish_job (material, account, title, tags, status, start_time,publish_type,product_link,group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)",
         rusqlite::params![
             job_data.material,
             job_data.account,
@@ -18,6 +18,7 @@ pub fn save(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), Ru
             job_data.start_time,
             job_data.publish_type,
             job_data.product_link,
+            job_data.group_id,
         ],
     )?;
     Ok(())
@@ -49,7 +50,7 @@ pub fn list_all() -> Result<PublishJobResponseData, RunTimeError> {
     publish_job.publish_type,publish_job.product_link 
     FROM publish_job
     left join account on publish_job.account = account.email
-    ORDER BY publish_job.id DESC
+    ORDER BY publish_job.id DESC LIMIT 200
     ")?;
     let mut data = Vec::new();
     let job_iter = stmt.query_map((), |row| {

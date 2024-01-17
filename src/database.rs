@@ -14,6 +14,34 @@ pub fn get_conn() -> Result<Connection, RunTimeError> {
     conn.execute("PRAGMA page_size=32768;", [])?; // Set page size to 32KB
     return Ok(conn);
 }
+pub fn add_column(table: &str, column_name: &str) -> Result<(), RunTimeError> {
+    let conn = get_conn()?;
+    // Check if the new column exists
+    let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", table))?;
+    let rows = stmt.query_map([], |row| Ok(row.get::<_, String>(1)?))?;
+
+    let mut column_exists = false;
+    for row in rows {
+        if let Ok(name) = row {
+            if name == column_name {
+                column_exists = true;
+                break;
+            }
+        }
+    }
+
+    // If the new column does not exist, add it
+    if !column_exists {
+        conn.execute(
+            &format!(
+                "ALTER TABLE account ADD COLUMN {} TEXT DEFAULT NULL",
+                column_name
+            ),
+            rusqlite::params![],
+        )?;
+    }
+    Ok(())
+}
 pub fn create_databases() -> Result<(), RunTimeError> {
     let conn = get_conn()?;
     conn.execute(
@@ -54,11 +82,13 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             fans INTEGER NOT NULL,
             shop_creator INTEGER NOT NULL DEFAULT 0,
             device TEXT DEFAULT NULL,
+            username TEXT DEFAULT NULL,
             register_time TEXT DEFAULT CURRENT_TIMESTAMP,
             last_login_time TEXT DEFAULT CURRENT_TIMESTAMP
           );",
         (),
     )?;
+    add_column("account", "username")?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS material (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,17 +144,29 @@ pub fn create_databases() -> Result<(), RunTimeError> {
         (),
     )?;
 
-    let count: i64 = conn.query_row("SELECT COUNT(*) FROM dialog_watcher", [], |row| row.get(0))?;
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM dialog_watcher where name='init1'",
+        [],
+        |row| row.get(0),
+    )?;
 
     if count == 0 {
-        //insert init data to dialog_watcher
-        log::info!("insert init data to dialog_watcher");
-
         conn.execute(
-        "INSERT INTO dialog_watcher (name, conditions, action,status) VALUES ('init1', 'DENY,ALLOW', 'click',1);",
+        "INSERT INTO dialog_watcher (name, conditions, action,status) VALUES ('init2', 'DENY,ALLOW', 'click',1);",
         (),
       )?;
     }
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM dialog_watcher where name='init2'",
+        [],
+        |row| row.get(0),
+    )?;
 
+    if count == 0 {
+        conn.execute(
+      "INSERT INTO dialog_watcher (name, conditions, action,status) VALUES ('init2', 'Accept', 'click',1);",
+      (),
+    )?;
+    }
     Ok(())
 }

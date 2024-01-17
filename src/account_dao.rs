@@ -24,16 +24,56 @@ pub fn save(conn: &Mutex<Connection>, data: AccountData) -> Result<(), RunTimeEr
 pub fn update(conn: &Mutex<Connection>, data: AccountData) -> Result<(), RunTimeError> {
     let _lock = conn.lock();
     let conn = database::get_conn()?;
+    //get by id
+    let mut stmt = conn.prepare(
+        "select id,email, pwd, fans, shop_creator, device,group_id,username from account where id = ?1",
+    )?;
+    let mut account_iter = stmt.query_map(rusqlite::params![data.id.unwrap()], |row| {
+        Ok(AccountDetails {
+            id: row.get(0)?,
+            email: row.get(1)?,
+            pwd: row.get(2)?,
+            fans: row.get(3)?,
+            shop_creator: row.get(4)?,
+            device: row.get(5)?,
+            group_id: row.get(6)?,
+            username: row.get(7)?,
+        })
+    })?;
+    let mut account = account_iter.next().unwrap().unwrap();
+    if data.email != "" {
+        account.email = data.email;
+    }
+    if data.pwd != "" {
+        account.pwd = data.pwd;
+    }
+    if data.fans != 0 {
+        account.fans = data.fans;
+    }
+    if data.shop_creator != 0 {
+        account.shop_creator = data.shop_creator;
+    }
+    if data.device != None {
+        account.device = data.device;
+    }
+    if data.group_id != None {
+        account.group_id = data.group_id;
+    }
+    if data.username != None {
+        account.username = data.username;
+    }
+
     conn.execute(
-        "UPDATE account SET email = ?1, pwd = ?2, fans = ?3, shop_creator = ?4, device = ?5, group_id = ?6 WHERE id = ?7",
+        "UPDATE account SET email = ?1, pwd = ?2, fans = ?3, shop_creator = ?4, device = ?5, group_id = ?6, username = ?7 WHERE id = ?8",
         rusqlite::params![
-            data.email,
-            data.pwd,
-            data.fans,
-            data.shop_creator,
-            data.device.unwrap(),
-            data.group_id.unwrap(),
-            data.id.unwrap(),
+            account.email,
+            account.pwd,
+            account.fans,
+            account.shop_creator,
+            account.device.unwrap(),
+            account.group_id.unwrap(),
+            account.username.unwrap(),
+            account.id,
         ],
     )?;
     Ok(())
@@ -50,7 +90,7 @@ pub fn list_all() -> Result<AccountResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare(
         "
-    SELECT id,email, pwd, fans, shop_creator, device,group_id FROM account
+    SELECT id,email, pwd, fans, shop_creator, device,group_id,username FROM account
         ORDER BY id ASC;",
     )?;
     let account_iter = stmt.query_map((), |row| {
@@ -62,6 +102,7 @@ pub fn list_all() -> Result<AccountResponseData, RunTimeError> {
             shop_creator: row.get(4)?,
             device: row.get(5)?,
             group_id: row.get(6)?,
+            username: row.get(7)?,
         })
     })?;
 
@@ -78,7 +119,7 @@ pub fn list_account_by_device(device: String) -> Result<AccountResponseData, Run
 
     let mut stmt = conn.prepare(
         "
-    SELECT id,email, pwd, fans, shop_creator, device, group_id FROM account
+    SELECT id,email, pwd, fans, shop_creator, device, group_id,username FROM account
         WHERE device = ?1
         ORDER BY id ASC;",
     )?;
@@ -92,6 +133,7 @@ pub fn list_account_by_device(device: String) -> Result<AccountResponseData, Run
             shop_creator: row.get(4)?,
             device: row.get(5)?,
             group_id: row.get(6)?,
+            username: row.get(7)?,
         })
     })?;
     for account_result in account_iter {
@@ -104,7 +146,7 @@ pub fn list_account_by_group_id(group_id: i32) -> Result<AccountResponseData, Ru
 
     let mut stmt = conn.prepare(
         "
-    SELECT id,email, pwd, fans, shop_creator, device, group_id FROM account
+    SELECT id,email, pwd, fans, shop_creator, device, group_id,username FROM account
         WHERE group_id = ?1
         ORDER BY id ASC;",
     )?;
@@ -118,6 +160,7 @@ pub fn list_account_by_group_id(group_id: i32) -> Result<AccountResponseData, Ru
             shop_creator: row.get(4)?,
             device: row.get(5)?,
             group_id: row.get(6)?,
+            username: row.get(7)?,
         })
     })?;
     for account_result in account_iter {
@@ -132,7 +175,8 @@ pub fn list_auto_train_account_by_agent_ip(
 
     let mut stmt = conn.prepare(
         "
-    SELECT account.id,account.email, account.pwd, account.fans, account.shop_creator, account.device, account.group_id FROM account
+    SELECT account.id,account.email, account.pwd, account.fans, account.shop_creator,
+     account.device, account.group_id, account.username FROM account
         left join device on account.device = device.serial
         left join `group` on account.group_id = `group`.id
         WHERE device.agent_ip = ?1 AND `group`.auto_train = 1 and device.online = 1
@@ -148,6 +192,7 @@ pub fn list_auto_train_account_by_agent_ip(
             shop_creator: row.get(4)?,
             device: row.get(5)?,
             group_id: row.get(6)?,
+            username: row.get(7)?,
         })
     })?;
     for account_result in account_iter {
