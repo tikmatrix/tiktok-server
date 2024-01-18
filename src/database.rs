@@ -144,29 +144,5 @@ pub fn create_databases() -> Result<(), RunTimeError> {
         (),
     )?;
 
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM dialog_watcher where name='init1'",
-        [],
-        |row| row.get(0),
-    )?;
-
-    if count == 0 {
-        conn.execute(
-        "INSERT INTO dialog_watcher (name, conditions, action,status) VALUES ('init2', 'DENY,ALLOW', 'click',1);",
-        (),
-      )?;
-    }
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM dialog_watcher where name='init2'",
-        [],
-        |row| row.get(0),
-    )?;
-
-    if count == 0 {
-        conn.execute(
-      "INSERT INTO dialog_watcher (name, conditions, action,status) VALUES ('init2', 'Accept', 'click',1);",
-      (),
-    )?;
-    }
     Ok(())
 }

@@ -70,20 +70,17 @@ pub fn update(conn: &Mutex<Connection>, data: AccountData) -> Result<(), RunTime
             account.pwd,
             account.fans,
             account.shop_creator,
-            account.device.unwrap(),
-            account.group_id.unwrap(),
-            account.username.unwrap(),
+            account.device.unwrap_or_default(),
+            account.group_id.unwrap_or_default(),
+            account.username.unwrap_or_default(),
             account.id,
         ],
     )?;
     Ok(())
 }
-pub fn del(email: String) -> Result<(), RunTimeError> {
+pub fn del(id: String) -> Result<(), RunTimeError> {
     let conn = database::get_conn()?;
-    conn.execute(
-        "DELETE FROM account WHERE email = ?1",
-        rusqlite::params![email],
-    )?;
+    conn.execute("DELETE FROM account WHERE id = ?1", rusqlite::params![id])?;
     Ok(())
 }
 pub fn list_all() -> Result<AccountResponseData, RunTimeError> {

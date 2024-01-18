@@ -6,7 +6,6 @@ use actix::Actor;
 use actix_cors::Cors;
 use actix_files as fs;
 use actix_multipart::form::{tempfile::TempFileConfig, MultipartFormConfig};
-use actix_web::middleware::Logger;
 use actix_web::web;
 use actix_web::App;
 use actix_web::HttpServer;
@@ -49,6 +48,7 @@ async fn main() -> io::Result<()> {
             Cleanup::KeepLogFiles(7), // - keep at most 7 log files
         )
         .duplicate_to_stderr(flexi_logger::Duplicate::Info)
+        .format(flexi_logger::colored_with_thread)
         .write_mode(WriteMode::BufferAndFlush)
         .start()
         .expect("flexi_logger init error");
@@ -85,7 +85,6 @@ async fn main() -> io::Result<()> {
         let cors = Cors::permissive();
         App::new()
             .wrap(cors)
-            .wrap(Logger::default())
             .app_data(conn_data.clone())
             .app_data(TempFileConfig::default().directory("./tmp"))
             //默认限制50M上传,修改为1GB

@@ -417,7 +417,7 @@ pub(crate) async fn script_api(
         )
         .await;
         if let Ok(result) = result {
-            log::info!("{} -> script result: {:?}", device.serial, result);
+            log::debug!("{} -> script result: {:?}", device.serial, result);
         } else {
             log::error!("{} -> script error: {:?}", device.serial, result);
         }
