@@ -115,70 +115,80 @@ impl JobScheduActor {
                 if let Ok(account_data) = result {
                     //check has unfinish publish_job by account
                     for account in account_data.data {
-                        let account_clone = account.clone();
-                        let group_clone = group.clone();
-                        let start_time = group_clone.publish_start_time;
-                        let today = chrono::Local::now()
-                            .naive_local()
-                            .format("%Y-%m-%d")
-                            .to_string();
-                        let start_time = format!("{} {}:00", today, start_time);
-                        //if start_time < now, continue
-                        if chrono::NaiveDateTime::parse_from_str(&start_time, "%Y-%m-%d %H:%M:%S")
+                        let start_times = group.publish_start_time.split(",");
+                        for start_time in start_times {
+                            let account_clone = account.clone();
+                            let group_clone = group.clone();
+                            let today = chrono::Local::now()
+                                .naive_local()
+                                .format("%Y-%m-%d")
+                                .to_string();
+                            let start_time = format!("{} {}:00", today, start_time);
+                            //if start_time < now, continue
+                            if chrono::NaiveDateTime::parse_from_str(
+                                &start_time,
+                                "%Y-%m-%d %H:%M:%S",
+                            )
                             .unwrap()
-                            < chrono::Local::now().naive_local()
-                        {
-                            continue;
-                        }
-                        let result = publish_job_dao::count_job_by_account_today(
-                            account_clone.email,
-                            start_time.clone(),
-                        );
-                        if let Ok(count) = result {
-                            let start_time = start_time.clone();
-                            if count == 0 {
-                                let mut material: String = "".to_string();
-                                if group_clone.publish_type == 1 {
-                                    let result = material_dao::count(Some(0), Some(group.id));
-                                    if let Ok(count) = result {
-                                        if count == 0 {
+                                < chrono::Local::now().naive_local()
+                            {
+                                continue;
+                            }
+                            let result = publish_job_dao::count_job_by_account_today(
+                                account_clone.email,
+                                start_time.clone(),
+                            );
+                            if let Ok(count) = result {
+                                let start_time = start_time.clone();
+                                if count == 0 {
+                                    let mut material: String = "".to_string();
+                                    if group_clone.publish_type == 1 {
+                                        let result = material_dao::count(Some(0), Some(group.id));
+                                        if let Ok(count) = result {
+                                            if count == 0 {
+                                                continue;
+                                            }
+                                        }
+                                        //get material
+                                        let result = material_dao::get_and_use_one(
+                                            &self.conn,
+                                            group_clone.id,
+                                        );
+                                        //if err, break
+                                        if let Err(_) = result {
+                                            log::warn!("get_and_use_one err");
                                             continue;
                                         }
+                                        material = result.unwrap().name;
                                     }
-                                    //get material
-                                    let result =
-                                        material_dao::get_and_use_one(&self.conn, group_clone.id);
-                                    //if err, break
+
+                                    //create publish_job
+                                    let account_clone = account.clone();
+                                    let group_clone = group.clone();
+
+                                    let job_data = PublishJobData {
+                                        id: None,
+                                        material: Some(material),
+                                        account: Some(account_clone.email),
+                                        title: group_clone.title,
+                                        tags: group_clone.tags,
+                                        status: Some(0),
+                                        start_time: Some(start_time),
+                                        group_id: Some(group_clone.id),
+                                        publish_type: group_clone.publish_type,
+                                        product_link: group_clone.product_link,
+                                    };
+                                    let job_data_clone = job_data.clone();
+                                    let result = publish_job_dao::save(&self.conn, job_data_clone);
                                     if let Err(_) = result {
-                                        log::warn!("get_and_use_one err");
-                                        continue;
+                                        log::warn!("publish_job_dao::save err -> {:?}", job_data);
+                                        break;
+                                    } else {
+                                        log::info!(
+                                            "publish_job_dao::save success -> {:?}",
+                                            job_data
+                                        );
                                     }
-                                    material = result.unwrap().name;
-                                }
-
-                                //create publish_job
-                                let account_clone = account.clone();
-                                let group_clone = group.clone();
-
-                                let job_data = PublishJobData {
-                                    id: None,
-                                    material: Some(material),
-                                    account: Some(account_clone.email),
-                                    title: group_clone.title,
-                                    tags: group_clone.tags,
-                                    status: Some(0),
-                                    start_time: Some(start_time),
-                                    group_id: Some(group_clone.id),
-                                    publish_type: group_clone.publish_type,
-                                    product_link: group_clone.product_link,
-                                };
-                                let job_data_clone = job_data.clone();
-                                let result = publish_job_dao::save(&self.conn, job_data_clone);
-                                if let Err(_) = result {
-                                    log::warn!("publish_job_dao::save err -> {:?}", job_data);
-                                    break;
-                                } else {
-                                    log::info!("publish_job_dao::save success -> {:?}", job_data);
                                 }
                             }
                         }

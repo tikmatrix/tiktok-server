@@ -14,7 +14,7 @@ pub fn get_conn() -> Result<Connection, RunTimeError> {
     conn.execute("PRAGMA page_size=32768;", [])?; // Set page size to 32KB
     return Ok(conn);
 }
-pub fn add_column(table: &str, column_name: &str) -> Result<(), RunTimeError> {
+pub fn add_column(table: &str, column_name: &str, ddl: &str) -> Result<(), RunTimeError> {
     let conn = get_conn()?;
     // Check if the new column exists
     let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", table))?;
@@ -32,13 +32,7 @@ pub fn add_column(table: &str, column_name: &str) -> Result<(), RunTimeError> {
 
     // If the new column does not exist, add it
     if !column_exists {
-        conn.execute(
-            &format!(
-                "ALTER TABLE account ADD COLUMN {} TEXT DEFAULT NULL",
-                column_name
-            ),
-            rusqlite::params![],
-        )?;
+        conn.execute(ddl, rusqlite::params![])?;
     }
     Ok(())
 }
@@ -83,12 +77,40 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             shop_creator INTEGER NOT NULL DEFAULT 0,
             device TEXT DEFAULT NULL,
             username TEXT DEFAULT NULL,
+            earnings INTEGER NOT NULL DEFAULT 0,
+            today_sales INTEGER NOT NULL DEFAULT 0,
+            today_sold_items INTEGER NOT NULL DEFAULT 0,
+            today_orders INTEGER NOT NULL DEFAULT 0,
             register_time TEXT DEFAULT CURRENT_TIMESTAMP,
             last_login_time TEXT DEFAULT CURRENT_TIMESTAMP
           );",
         (),
     )?;
-    add_column("account", "username")?;
+    add_column(
+        "account",
+        "username",
+        "ALTER TABLE account ADD COLUMN `username` TEXT DEFAULT NULL",
+    )?;
+    add_column(
+        "account",
+        "earnings",
+        "ALTER TABLE account ADD COLUMN `earnings` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    add_column(
+        "account",
+        "today_sales",
+        "ALTER TABLE account ADD COLUMN `today_sales` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    add_column(
+        "account",
+        "today_sold_items",
+        "ALTER TABLE account ADD COLUMN `today_sold_items` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    add_column(
+        "account",
+        "today_orders",
+        "ALTER TABLE account ADD COLUMN `today_orders` INTEGER NOT NULL DEFAULT 0",
+    )?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS material (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

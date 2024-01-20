@@ -11,6 +11,10 @@ pub struct AccountData {
     pub device: Option<String>,
     pub username: Option<String>,
     pub group_id: Option<i32>,
+    pub earnings: Option<i32>,
+    pub today_sales: Option<i32>,
+    pub today_sold_items: Option<i32>,
+    pub today_orders: Option<i32>,
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AccountDetails {
@@ -22,6 +26,10 @@ pub struct AccountDetails {
     pub device: Option<String>,
     pub username: Option<String>,
     pub group_id: Option<i32>,
+    pub earnings: i32,
+    pub today_sales: i32,
+    pub today_sold_items: i32,
+    pub today_orders: i32,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AccountResponseData {
@@ -88,7 +96,7 @@ pub struct PublishJobDetails {
     pub status: i32,
     pub start_time: String,
     pub end_time: String,
-    pub device: String,
+    pub device: Option<String>,
     pub group_id: i32,
     pub publish_type: i32,
     pub product_link: Option<String>,
