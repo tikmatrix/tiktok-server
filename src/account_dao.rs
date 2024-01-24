@@ -15,8 +15,8 @@ pub fn save(conn: &Mutex<Connection>, data: AccountData) -> Result<(), RunTimeEr
             data.pwd,
             data.fans,
             data.shop_creator,
-            data.device.unwrap(),
-            data.group_id.unwrap(),
+            data.device.unwrap_or_default(),
+            data.group_id.unwrap_or_default(),
         ],
     )?;
     Ok(())

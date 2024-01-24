@@ -90,8 +90,8 @@ async fn main() -> io::Result<()> {
             //默认限制50M上传,修改为1GB
             .app_data(
                 MultipartFormConfig::default()
-                    .total_limit(1024 * 1024 * 1024)
-                    .memory_limit(1024 * 1024 * 10),
+                    .total_limit(1024 * 1024 * 1024 * 5)
+                    .memory_limit(1024 * 1024 * 100),
             )
             .app_data(ddl_sender_data.clone())
             .service(routes::add_account_api)
