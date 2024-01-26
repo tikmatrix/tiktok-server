@@ -133,28 +133,10 @@ pub fn save(
                 ],
             })
             .unwrap();
-        // conn.execute(
-        //     "UPDATE device SET forward_port = ?1, online = ?2, ip = ?3, agent_ip = ?4
-        //     WHERE serial = ?5",
-        //     rusqlite::params![
-        //         device_data.forward_port,
-        //         device_data.online,
-        //         device_data.ip,
-        //         device_data.agent_ip,
-        //         device_data.serial,
-        //     ],
-        // )?;
-        // log::debug!(
-        //     "device {} update success -> {} s",
-        //     device_data.serial,
-        //     chrono::Local::now()
-        //         .signed_duration_since(start_time)
-        //         .num_seconds()
-        // );
         return Ok(false);
     }
     //不存在则插入
-    log::debug!("device {} not exists", device_data.serial);
+    log::info!("device {} not exists", device_data.serial);
     let master_ip = local_ip().unwrap().to_string();
     ddl_sender
         .lock()
@@ -173,17 +155,5 @@ pub fn save(
             ],
         })
         .unwrap();
-    // conn.execute(
-    //     "INSERT INTO device (serial, forward_port, online, ip, agent_ip, master_ip)
-    //     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-    //     rusqlite::params![
-    //         device_data.serial,
-    //         device_data.forward_port,
-    //         device_data.online,
-    //         device_data.ip,
-    //         device_data.agent_ip,
-    //         master_ip,
-    //     ],
-    // )?;
     Ok(true)
 }
