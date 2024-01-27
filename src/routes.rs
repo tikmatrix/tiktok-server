@@ -1,12 +1,12 @@
 use crate::ddl_actor::DdlMessage;
 use crate::models::{
     AccountData, DeviceDataList, DialogWatcherData, GroupData, LicenseData, LicenseDetails,
-    LicenseResponseData, MaterialData, MaterialFormData, MaterialUesData, PublishJobData,
-    ResponseData, ScriptQueryParams, TrainJobData,
+    LicenseResponseData, MaterialData, MaterialFormData, MaterialUesData, MusicData,
+    PublishJobData, ResponseData, ScriptQueryParams, TrainJobData,
 };
 use crate::models::{InstallFormData, ShellData};
 use crate::{
-    account_dao, aes_util, device_dao, dialog_watcher_dao, group_dao, material_dao,
+    account_dao, aes_util, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
     publish_job_dao, request_util, train_job_dao,
 };
 use actix_multipart::form::MultipartForm;
@@ -460,6 +460,47 @@ pub(crate) async fn delete_group_api(
         .parse::<i32>()
         .map_err(|_| actix_web::error::ErrorBadRequest("Invalid id query parameter"))?;
     web::block(move || group_dao::del(id)).await??;
+    Ok(HttpResponse::NoContent())
+}
+#[get("/api/music")]
+pub(crate) async fn get_music_api() -> actix_web::Result<impl Responder> {
+    let music_response_data = web::block(move || music_dao::list_all()).await??;
+    Ok(web::Json(music_response_data))
+}
+#[get("/api/music/random")]
+pub(crate) async fn get_music_random_api() -> actix_web::Result<impl Responder> {
+    let music_response_data = web::block(move || music_dao::random_one()).await??;
+    Ok(web::Json(music_response_data))
+}
+#[post("/api/music")]
+pub(crate) async fn add_music_api(
+    conn: web::Data<Mutex<Connection>>,
+    web::Json(music_data): web::Json<MusicData>,
+) -> actix_web::Result<impl Responder> {
+    web::block(move || music_dao::save(&conn, music_data)).await??;
+    Ok(HttpResponse::NoContent())
+}
+#[put("/api/music")]
+pub(crate) async fn update_music_api(
+    conn: web::Data<Mutex<Connection>>,
+    web::Json(music_data): web::Json<MusicData>,
+) -> actix_web::Result<impl Responder> {
+    web::block(move || music_dao::update(&conn, music_data)).await??;
+    Ok(HttpResponse::NoContent())
+}
+#[delete("/api/music")]
+pub(crate) async fn delete_music_api(
+    web::Query(query): web::Query<HashMap<String, String>>,
+) -> actix_web::Result<impl Responder> {
+    let id = query
+        .get("id")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing id query parameter"))?
+        .clone();
+    //convert id i32
+    let id = id
+        .parse::<i32>()
+        .map_err(|_| actix_web::error::ErrorBadRequest("Invalid id query parameter"))?;
+    web::block(move || music_dao::del(id)).await??;
     Ok(HttpResponse::NoContent())
 }
 //add dialog watcher

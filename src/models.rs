@@ -207,6 +207,23 @@ pub struct GroupResponseData {
     pub data: Vec<GroupDetails>,
 }
 #[derive(Debug, Deserialize, Serialize)]
+pub struct MusicData {
+    pub id: Option<i32>,
+    pub release_name: String,
+    pub artist_name: String,
+}
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct MusicDetails {
+    pub id: i32,
+    pub release_name: String,
+    pub artist_name: String,
+}
+#[derive(Debug, Deserialize, Serialize)]
+pub struct MusicResponseData {
+    pub data: Vec<MusicDetails>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct DialogWatcherData {
     pub id: Option<i32>,
     pub conditions: Option<String>,

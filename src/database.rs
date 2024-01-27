@@ -165,6 +165,14 @@ pub fn create_databases() -> Result<(), RunTimeError> {
       );",
         (),
     )?;
-
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS music (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        release_name TEXT NOT NULL,
+        artist_name TEXT NOT NULL,
+        create_time TEXT DEFAULT CURRENT_TIMESTAMP
+      );",
+        (),
+    )?;
     Ok(())
 }

@@ -27,6 +27,7 @@ mod group_dao;
 mod job_schedu;
 mod material_dao;
 mod models;
+mod music_dao;
 mod offline_checker;
 mod publish_job_dao;
 mod request_util;
@@ -125,6 +126,11 @@ async fn main() -> io::Result<()> {
             .service(routes::add_group_api)
             .service(routes::update_group_api)
             .service(routes::delete_group_api)
+            .service(routes::get_music_api)
+            .service(routes::get_music_random_api)
+            .service(routes::add_music_api)
+            .service(routes::update_music_api)
+            .service(routes::delete_music_api)
             .service(routes::get_dialog_watcher_api)
             .service(routes::add_dialog_watcher_api)
             .service(routes::update_dialog_watcher_api)
