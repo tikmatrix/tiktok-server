@@ -603,3 +603,40 @@ pub(crate) async fn get_license_api() -> actix_web::Result<impl Responder> {
         data: Some(license_details),
     }))
 }
+//get settings
+#[derive(serde::Serialize)]
+struct Settings {
+    proxy_url: String,
+    server_url: String,
+    country: String,
+    wifi_name: String,
+    wifi_password: String,
+    version: String,
+}
+#[derive(serde::Serialize)]
+struct SettingsResponseData {
+    code: i32,
+    data: Option<Settings>,
+}
+#[get("/api/settings")]
+pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
+    //get setting from env
+    let proxy_url = std::env::var("PROXY_URL").unwrap_or_else(|_| "".to_string());
+    let server_url = std::env::var("SERVER_URL").unwrap_or_else(|_| "".to_string());
+    let country = std::env::var("COUNTRY").unwrap_or_else(|_| "".to_string());
+    let wifi_name = std::env::var("WIFI_NAME").unwrap_or_else(|_| "".to_string());
+    let wifi_password = std::env::var("WIFI_PASSWORD").unwrap_or_else(|_| "".to_string());
+    let version = std::env::var("VERSION").unwrap_or_else(|_| "".to_string());
+    let settings = Settings {
+        proxy_url,
+        server_url,
+        country,
+        wifi_name,
+        wifi_password,
+        version,
+    };
+    Ok(web::Json(SettingsResponseData {
+        code: 0,
+        data: Some(settings),
+    }))
+}

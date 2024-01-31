@@ -137,6 +137,7 @@ async fn main() -> io::Result<()> {
             .service(routes::delete_dialog_watcher_api)
             .service(routes::add_license_api)
             .service(routes::get_license_api)
+            .service(routes::get_settings_api)
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))
             .service(fs::Files::new("/", "./bin/dist/").index_file("index.html"))
