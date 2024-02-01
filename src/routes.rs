@@ -604,7 +604,7 @@ pub(crate) async fn get_license_api() -> actix_web::Result<impl Responder> {
     }))
 }
 //get settings
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 struct Settings {
     proxy_url: String,
     server_url: String,
@@ -612,8 +612,9 @@ struct Settings {
     wifi_name: String,
     wifi_password: String,
     version: String,
+    adb_mode: String,
 }
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 struct SettingsResponseData {
     code: i32,
     data: Option<Settings>,
@@ -627,6 +628,7 @@ pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
     let wifi_name = std::env::var("WIFI_NAME").unwrap_or_else(|_| "".to_string());
     let wifi_password = std::env::var("WIFI_PASSWORD").unwrap_or_else(|_| "".to_string());
     let version = std::env::var("VERSION").unwrap_or_else(|_| "".to_string());
+    let adb_mode = std::env::var("ADB_MODE").unwrap_or_else(|_| "usb".to_string());
     let settings = Settings {
         proxy_url,
         server_url,
@@ -634,9 +636,23 @@ pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
         wifi_name,
         wifi_password,
         version,
+        adb_mode,
     };
     Ok(web::Json(SettingsResponseData {
         code: 0,
         data: Some(settings),
     }))
+}
+#[put("/api/settings")]
+pub(crate) async fn update_settings_api(
+    web::Json(settings): web::Json<Settings>,
+) -> actix_web::Result<impl Responder> {
+    std::env::set_var("PROXY_URL", settings.proxy_url);
+    std::env::set_var("SERVER_URL", settings.server_url);
+    std::env::set_var("COUNTRY", settings.country);
+    std::env::set_var("WIFI_NAME", settings.wifi_name);
+    std::env::set_var("WIFI_PASSWORD", settings.wifi_password);
+    std::env::set_var("VERSION", settings.version);
+    std::env::set_var("ADB_MODE", settings.adb_mode);
+    Ok(HttpResponse::NoContent())
 }

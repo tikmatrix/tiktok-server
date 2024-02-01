@@ -59,7 +59,12 @@ pub fn list_online_device(
         query.push_str(" AND agent_ip = ? ");
         params.push(rusqlite::types::Value::Text(agent_ip));
     }
-
+    let adb_mode = std::env::var("ADB_MODE").unwrap_or(String::from("usb"));
+    if adb_mode == "tcp" {
+        query.push_str(" AND serial LIKE '%:%' ");
+    } else {
+        query.push_str(" AND serial NOT LIKE '%:%' ");
+    }
     query.push_str(" ORDER BY serial ASC");
     if !is_license_valid() {
         query.push_str(" LIMIT 1 ");
@@ -102,27 +107,31 @@ pub fn is_license_valid() -> bool {
     }
     false
 }
-
+fn is_tcp_connection(serial: &str) -> bool {
+    serial.contains(":")
+}
 pub fn save(
     ddl_sender: &Arc<Mutex<Sender<DdlMessage>>>,
     device_data: DeviceData,
 ) -> Result<bool, RunTimeError> {
     // let _lock = conn.lock();
     let conn = database::get_conn()?;
-    //根据serial查询是否存在
-    let mut stmt: rusqlite::Statement<'_> =
-        conn.prepare("SELECT serial FROM device WHERE serial = ?1;")?;
+    //需要根据serial判断是usb连接还是tcp连接
+    let mut exists_id = 0;
+    let mut stmt = conn.prepare("SELECT id FROM device WHERE serial = ?1;")?;
     let mut rows = stmt.query(rusqlite::params![device_data.serial])?;
-    if let Some(_row) = rows.next()? {
-        // let start_time = chrono::Local::now();
+    while let Some(row) = rows.next()? {
+        exists_id = row.get(0)?;
+    }
+    if exists_id > 0 {
         log::debug!("device {} already exists", device_data.serial);
         //存在则更新
         ddl_sender
             .lock()
             .unwrap()
             .send(DdlMessage {
-                sql: "UPDATE device SET forward_port = ?1, online = ?2, ip = ?3, agent_ip = ?4
-                WHERE serial = ?5"
+                sql: "UPDATE device SET forward_port = ?1, online = ?2, ip = ?3, agent_ip = ?4, serial = ?5
+                WHERE id = ?6"
                     .to_string(),
                 params: vec![
                     Value::Integer(device_data.forward_port as i64),
@@ -130,6 +139,7 @@ pub fn save(
                     Value::Text(device_data.ip.unwrap_or("".to_string())),
                     Value::Text(device_data.agent_ip),
                     Value::Text(device_data.serial),
+                    Value::Integer(exists_id),
                 ],
             })
             .unwrap();
@@ -138,12 +148,17 @@ pub fn save(
     //不存在则插入
     log::info!("device {} not exists", device_data.serial);
     let master_ip = local_ip().unwrap().to_string();
+    let mut init = 0;
+    if is_tcp_connection(&device_data.serial) {
+        //切换tcp不用重新初始化
+        init = 1;
+    }
     ddl_sender
         .lock()
         .unwrap()
         .send(DdlMessage {
-            sql: "INSERT INTO device (serial, forward_port, online, ip, agent_ip, master_ip)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6)"
+            sql: "INSERT INTO device (serial, forward_port, online, ip, agent_ip, master_ip, init)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"
                 .to_string(),
             params: vec![
                 Value::Text(device_data.serial),
@@ -152,6 +167,7 @@ pub fn save(
                 Value::Text(device_data.ip.unwrap_or("".to_string())),
                 Value::Text(device_data.agent_ip),
                 Value::Text(master_ip),
+                Value::Integer(init),
             ],
         })
         .unwrap();

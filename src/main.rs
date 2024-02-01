@@ -53,13 +53,7 @@ async fn main() -> io::Result<()> {
         .write_mode(WriteMode::BufferAndFlush)
         .start()
         .expect("flexi_logger init error");
-    log::info!("creating temporary upload directory");
-    std::fs::create_dir_all("./tmp")?;
-    std::fs::create_dir_all("./data")?;
-    std::fs::create_dir_all("./upload")?;
-    std::fs::create_dir_all("./upload/material")?;
-    std::fs::create_dir_all("./upload/apk")?;
-    log::info!("setting up app from environment");
+
     //init sqlite
     database::create_databases().expect("create sqlite database error");
     let conn = database::get_conn().expect("get sqlite connection error");
@@ -138,6 +132,7 @@ async fn main() -> io::Result<()> {
             .service(routes::add_license_api)
             .service(routes::get_license_api)
             .service(routes::get_settings_api)
+            .service(routes::update_settings_api)
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))
             .service(fs::Files::new("/", "./bin/dist/").index_file("index.html"))
