@@ -1,6 +1,6 @@
 use crate::ddl_actor::DdlMessage;
 use crate::models::{
-    AccountData, DeviceDataList, DialogWatcherData, GroupData, LicenseData, LicenseDetails,
+    AccountData, DeviceData, DialogWatcherData, GroupData, LicenseData, LicenseDetails,
     LicenseResponseData, MaterialData, MaterialFormData, MaterialUesData, MusicData,
     PublishJobData, ResponseData, ScriptQueryParams, TrainJobData,
 };
@@ -313,13 +313,10 @@ pub(crate) async fn delete_train_job_api(
 #[post("/api/device")]
 pub(crate) async fn add_device_api(
     ddl_sender_data: web::Data<Arc<Mutex<Sender<DdlMessage>>>>,
-    web::Json(device_data_list): web::Json<DeviceDataList>,
+    web::Json(device_data): web::Json<DeviceData>,
 ) -> actix_web::Result<impl Responder> {
-    for device_data in device_data_list.data {
-        let device_data = device_data.clone();
-        let ddl_sender_data_clone = ddl_sender_data.clone();
-        web::block(move || device_dao::save(&ddl_sender_data_clone, device_data)).await??;
-    }
+    let ddl_sender_data_clone = ddl_sender_data.clone();
+    web::block(move || device_dao::save(&ddl_sender_data_clone, device_data)).await??;
     Ok(web::Json(ResponseData {
         data: { "ok".to_string() },
     }))

@@ -42,7 +42,7 @@ pub fn list_online_device(
 ) -> Result<DeviceResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut query = "
-    SELECT id,serial, forward_port, online, ip,  agent_ip, init
+    SELECT id,serial, forward_port, online, agent_ip, init
     FROM device 
     WHERE online = 1
 "
@@ -76,9 +76,8 @@ pub fn list_online_device(
             serial: row.get(1)?,
             forward_port: row.get(2)?,
             online: row.get(3)?,
-            ip: row.get(4)?,
-            agent_ip: row.get(5)?,
-            init: row.get(6)?,
+            agent_ip: row.get(4)?,
+            init: row.get(5)?,
         })
     })?;
 
@@ -130,13 +129,12 @@ pub fn save(
             .lock()
             .unwrap()
             .send(DdlMessage {
-                sql: "UPDATE device SET forward_port = ?1, online = ?2, ip = ?3, agent_ip = ?4, serial = ?5
-                WHERE id = ?6"
+                sql: "UPDATE device SET forward_port = ?1, online = ?2, agent_ip = ?3, serial = ?4
+                WHERE id = ?5"
                     .to_string(),
                 params: vec![
                     Value::Integer(device_data.forward_port as i64),
                     Value::Integer(device_data.online as i64),
-                    Value::Text(device_data.ip.unwrap_or("".to_string())),
                     Value::Text(device_data.agent_ip),
                     Value::Text(device_data.serial),
                     Value::Integer(exists_id),
@@ -157,14 +155,13 @@ pub fn save(
         .lock()
         .unwrap()
         .send(DdlMessage {
-            sql: "INSERT INTO device (serial, forward_port, online, ip, agent_ip, master_ip, init)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"
+            sql: "INSERT INTO device (serial, forward_port, online, agent_ip, master_ip, init)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6)"
                 .to_string(),
             params: vec![
                 Value::Text(device_data.serial),
                 Value::Integer(device_data.forward_port as i64),
                 Value::Integer(device_data.online as i64),
-                Value::Text(device_data.ip.unwrap_or("".to_string())),
                 Value::Text(device_data.agent_ip),
                 Value::Text(master_ip),
                 Value::Integer(init),

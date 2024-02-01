@@ -139,7 +139,6 @@ pub struct DeviceData {
     pub serial: String,
     pub forward_port: i32,
     pub online: i32,
-    pub ip: Option<String>,
     pub agent_ip: String,
 }
 
@@ -149,7 +148,6 @@ pub struct DeviceDetails {
     pub serial: String,
     pub forward_port: i32,
     pub online: i32,
-    pub ip: Option<String>,
     pub agent_ip: String,
     pub init: i32,
 }
@@ -242,10 +240,7 @@ pub struct DialogWatcherDetails {
 pub struct DialogWatcherResponseData {
     pub data: Vec<DialogWatcherDetails>,
 }
-#[derive(Debug, Deserialize, Serialize)]
-pub struct DeviceDataList {
-    pub data: Vec<DeviceData>,
-}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LicenseData {
     pub code: String,

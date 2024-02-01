@@ -59,7 +59,6 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             serial TEXT NOT NULL,
             forward_port INTEGER NOT NULL DEFAULT 0,
             online INTEGER NOT NULL DEFAULT 0,
-            ip TEXT DEFAULT NULL,
             agent_ip TEXT NOT NULL,
             master_ip TEXT NOT NULL,
             init INTEGER NOT NULL DEFAULT 0,
