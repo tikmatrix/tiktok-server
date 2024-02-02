@@ -112,6 +112,7 @@ async fn main() -> io::Result<()> {
             .service(routes::add_device_api)
             .service(routes::get_device_api)
             .service(routes::get_device_init_api)
+            .service(routes::task_status_api)
             .service(routes::shell_api)
             .service(routes::script_api)
             .service(routes::install_api)

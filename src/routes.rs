@@ -653,3 +653,31 @@ pub(crate) async fn update_settings_api(
     std::env::set_var("ADB_MODE", settings.adb_mode);
     Ok(HttpResponse::NoContent())
 }
+#[get("/api/device/task_status")]
+pub(crate) async fn task_status_api(
+    web::Query(query): web::Query<HashMap<String, String>>,
+) -> actix_web::Result<impl Responder> {
+    if let Some(serial) = query.get("serial") {
+        let devices = device_dao::list_online_device(Some(serial.to_string()), None)?;
+        for device in devices.data {
+            let result = request_util::get_json::<ResponseData>(
+                device.agent_ip.as_str(),
+                &format!("/api/device/task_status?serial={}", device.serial.as_str(),),
+            )
+            .await;
+            if let Ok(result) = result {
+                log::info!("{} -> task_status result: {:?}", device.serial, result);
+                return Ok(web::Json(result));
+            } else {
+                log::error!("{} -> task_status error: {:?}", device.serial, result);
+            }
+        }
+        return Ok(web::Json(ResponseData {
+            data: "error".to_string(),
+        }));
+    } else {
+        Ok(web::Json(ResponseData {
+            data: "error".to_string(),
+        }))
+    }
+}
