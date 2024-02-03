@@ -1,12 +1,11 @@
 use crate::ddl_actor::DdlMessage;
 use crate::models::{
-    AccountData, DeviceData, DialogWatcherData, GroupData, LicenseData, LicenseDetails,
-    LicenseResponseData, MaterialData, MaterialFormData, MaterialUesData, MusicData,
-    PublishJobData, ResponseData, ScriptQueryParams, TrainJobData,
+    AccountData, DeviceData, DialogWatcherData, GroupData, MaterialData, MaterialFormData,
+    MaterialUesData, MusicData, PublishJobData, ResponseData, ScriptQueryParams, TrainJobData,
 };
 use crate::models::{InstallFormData, ShellData};
 use crate::{
-    account_dao, aes_util, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
+    account_dao, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
     publish_job_dao, request_util, train_job_dao,
 };
 use actix_multipart::form::MultipartForm;
@@ -14,9 +13,7 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use local_ip_address::local_ip;
 use rusqlite::Connection;
 use serde::Serialize;
-use std::fs::OpenOptions;
 use std::io::Read;
-use std::io::Write;
 use std::path::Path;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
@@ -542,64 +539,6 @@ pub(crate) async fn get_dialog_watcher_api() -> actix_web::Result<impl Responder
     Ok(web::Json(dialog_watcher_response_data))
 }
 
-//save license
-#[post("/api/license")]
-pub(crate) async fn add_license_api(
-    web::Json(license_data): web::Json<LicenseData>,
-) -> actix_web::Result<impl Responder> {
-    let code = license_data.code.clone();
-    let license = aes_util::aes_decrypt(&code);
-    if license.is_empty() {
-        return Ok(web::Json(LicenseResponseData {
-            code: 1,
-            data: None,
-        }));
-    }
-    //json parse license
-    let license_details: LicenseDetails = serde_json::from_str(&license).unwrap();
-    //save license to .license
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .open(".license")
-        .unwrap();
-
-    if let Err(e) = writeln!(file, "{}", code) {
-        log::error!("Couldn't write to file: {}", e);
-    }
-    //return
-    Ok(web::Json(LicenseResponseData {
-        code: 0,
-        data: Some(license_details),
-    }))
-}
-//get license
-#[get("/api/license")]
-pub(crate) async fn get_license_api() -> actix_web::Result<impl Responder> {
-    let file = File::open(".license");
-    if file.is_err() {
-        return Ok(web::Json(LicenseResponseData {
-            code: 0,
-            data: None,
-        }));
-    }
-    let mut file = file.unwrap();
-    let mut code = String::new();
-    file.read_to_string(&mut code).unwrap();
-    let code = code.trim().to_string();
-    let license = aes_util::aes_decrypt(&code);
-    if license.is_empty() {
-        return Ok(web::Json(LicenseResponseData {
-            code: 0,
-            data: None,
-        }));
-    }
-    let license_details: LicenseDetails = serde_json::from_str(&license).unwrap();
-    Ok(web::Json(LicenseResponseData {
-        code: 0,
-        data: Some(license_details),
-    }))
-}
 //get settings
 #[derive(serde::Serialize, serde::Deserialize)]
 struct Settings {

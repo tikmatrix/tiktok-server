@@ -18,7 +18,6 @@ use std::io;
 use std::sync::Arc;
 use std::sync::Mutex;
 mod account_dao;
-mod aes_util;
 mod database;
 mod ddl_actor;
 mod device_dao;
@@ -130,8 +129,6 @@ async fn main() -> io::Result<()> {
             .service(routes::add_dialog_watcher_api)
             .service(routes::update_dialog_watcher_api)
             .service(routes::delete_dialog_watcher_api)
-            .service(routes::add_license_api)
-            .service(routes::get_license_api)
             .service(routes::get_settings_api)
             .service(routes::update_settings_api)
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))

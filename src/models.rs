@@ -129,6 +129,7 @@ pub struct TrainJobDetails {
     pub start_time: String,
     pub end_time: String,
     pub device: Option<String>,
+    pub username: Option<String>,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TrainJobResponseData {
@@ -239,19 +240,4 @@ pub struct DialogWatcherDetails {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DialogWatcherResponseData {
     pub data: Vec<DialogWatcherDetails>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LicenseData {
-    pub code: String,
-}
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LicenseResponseData {
-    pub code: i32,
-    pub data: Option<LicenseDetails>,
-}
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LicenseDetails {
-    pub name: String,
-    pub expire: i64,
 }

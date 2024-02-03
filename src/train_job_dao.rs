@@ -42,11 +42,15 @@ pub fn update(conn: &Mutex<Connection>, job_data: TrainJobData) -> Result<(), Ru
 }
 pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
     let conn = database::get_conn()?;
-    let mut stmt = conn.prepare("
-    SELECT train_job.id,train_job.group_id,train_job.account,train_job.click,train_job.follow,train_job.favorites,train_job.status,train_job.start_time,train_job.end_time,account.device FROM train_job
+    let mut stmt = conn.prepare(
+        "
+    SELECT train_job.id,train_job.group_id,train_job.account,
+    train_job.click,train_job.follow,train_job.favorites,train_job.status,
+    train_job.start_time,train_job.end_time,account.device,account.username FROM train_job
     left join account on train_job.account = account.email
     ORDER BY train_job.id DESC LIMIT 200
-    ")?;
+    ",
+    )?;
     let mut data = Vec::new();
     let job_iter = stmt.query_map((), |row| {
         Ok(TrainJobDetails {
@@ -60,6 +64,7 @@ pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
             start_time: row.get(7)?,
             end_time: row.get(8)?,
             device: row.get(9)?,
+            username: row.get(10)?,
         })
     })?;
     for job in job_iter {
@@ -74,15 +79,19 @@ pub fn del(id: i32) -> Result<(), RunTimeError> {
 }
 pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeError> {
     let conn = database::get_conn()?;
-    let mut stmt = conn.prepare("
-    SELECT train_job.id,train_job.group_id,train_job.account,train_job.click,train_job.follow,train_job.favorites,train_job.status,train_job.start_time,train_job.end_time,account.device FROM train_job
+    let mut stmt = conn.prepare(
+        "
+    SELECT train_job.id,train_job.group_id,train_job.account,
+    train_job.click,train_job.follow,train_job.favorites,train_job.status,
+    train_job.start_time,train_job.end_time,account.device,account.username FROM train_job
     left join account on train_job.account = account.email
     left join device on account.device = device.serial
     WHERE train_job.status = 0 AND device.agent_ip = ?1 
     AND train_job.start_time < datetime('now', 'localtime') 
     AND device.online = 1
     ORDER BY train_job.id ASC
-    ")?;
+    ",
+    )?;
     let mut data = Vec::new();
     let job_iter = stmt.query_map(rusqlite::params![agent_ip], |row| {
         Ok(TrainJobDetails {
@@ -96,6 +105,7 @@ pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeErr
             start_time: row.get(7)?,
             end_time: row.get(8)?,
             device: row.get(9)?,
+            username: row.get(10)?,
         })
     })?;
     for publish_job in job_iter {

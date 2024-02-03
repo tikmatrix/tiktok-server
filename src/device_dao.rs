@@ -1,14 +1,12 @@
 use std::{
-    fs::File,
-    io::Read,
     sync::{mpsc::Sender, Arc, Mutex},
     vec,
 };
 
 use crate::{
-    aes_util, database,
+    database,
     ddl_actor::DdlMessage,
-    models::{DeviceData, DeviceDetails, DeviceResponseData, LicenseDetails},
+    models::{DeviceData, DeviceDetails, DeviceResponseData},
     runtime_err::RunTimeError,
 };
 use local_ip_address::local_ip;
@@ -66,9 +64,7 @@ pub fn list_online_device(
         query.push_str(" AND serial NOT LIKE '%:%' ");
     }
     query.push_str(" ORDER BY serial ASC");
-    if !is_license_valid() {
-        query.push_str(" LIMIT 1 ");
-    }
+
     let mut stmt = conn.prepare(&query)?;
     let rows = stmt.query_map(rusqlite::params_from_iter(params), |row| {
         Ok(DeviceDetails {
@@ -87,25 +83,7 @@ pub fn list_online_device(
     }
     Ok(DeviceResponseData { data: devices })
 }
-pub fn is_license_valid() -> bool {
-    let file = File::open(".license");
-    if file.is_err() {
-        return false;
-    }
-    let mut file = file.unwrap();
-    let mut code = String::new();
-    file.read_to_string(&mut code).unwrap();
-    let code = code.trim().to_string();
-    let license = aes_util::aes_decrypt(&code);
-    if license.is_empty() {
-        return false;
-    }
-    let license_details: LicenseDetails = serde_json::from_str(&license).unwrap();
-    if license_details.expire > chrono::Local::now().timestamp() {
-        return true;
-    }
-    false
-}
+
 fn is_tcp_connection(serial: &str) -> bool {
     serial.contains(":")
 }
