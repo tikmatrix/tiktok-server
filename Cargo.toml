@@ -27,3 +27,4 @@ serde_urlencoded = "0.7.1"
 regex = "1.10.2"
 unicode-segmentation = "1.10.1"
 rusqlite = { version = "0.30.0", features = ["bundled"] }
+pickledb = "0.5.1"

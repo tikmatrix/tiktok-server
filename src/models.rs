@@ -100,6 +100,7 @@ pub struct PublishJobDetails {
     pub group_id: i32,
     pub publish_type: i32,
     pub product_link: Option<String>,
+    pub username: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -47,7 +47,7 @@ pub fn list_all() -> Result<PublishJobResponseData, RunTimeError> {
     let mut stmt = conn.prepare("
     SELECT publish_job.id,publish_job.material, publish_job.account, publish_job.title, publish_job.tags, publish_job.status, 
     publish_job.start_time,publish_job.end_time,account.device,publish_job.group_id,
-    publish_job.publish_type,publish_job.product_link 
+    publish_job.publish_type,publish_job.product_link,account.username
     FROM publish_job
     left join account on publish_job.account = account.email
     ORDER BY publish_job.id DESC LIMIT 200
@@ -67,6 +67,7 @@ pub fn list_all() -> Result<PublishJobResponseData, RunTimeError> {
             group_id: row.get(9)?,
             publish_type: row.get(10)?,
             product_link: row.get(11)?,
+            username: row.get(12)?,
         })
     })?;
     for publish_job in job_iter {
@@ -87,7 +88,7 @@ pub fn list_runable(agent_ip: String) -> Result<PublishJobResponseData, RunTimeE
     let mut stmt = conn.prepare("
     SELECT publish_job.id,publish_job.material, publish_job.account, publish_job.title, publish_job.tags, 
     publish_job.status, publish_job.start_time,publish_job.end_time,account.device,publish_job.group_id,
-    publish_job.publish_type,publish_job.product_link 
+    publish_job.publish_type,publish_job.product_link,account.username
     FROM publish_job
     left join account on publish_job.account = account.email
     left join device on account.device = device.serial
@@ -111,6 +112,7 @@ pub fn list_runable(agent_ip: String) -> Result<PublishJobResponseData, RunTimeE
             group_id: row.get(9)?,
             publish_type: row.get(10)?,
             product_link: row.get(11)?,
+            username: row.get(12)?,
         })
     })?;
     for publish_job in job_iter {

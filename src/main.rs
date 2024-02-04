@@ -52,7 +52,7 @@ async fn main() -> io::Result<()> {
         .write_mode(WriteMode::BufferAndFlush)
         .start()
         .expect("flexi_logger init error");
-
+    routes::setup_env();
     //init sqlite
     database::create_databases().expect("create sqlite database error");
     let conn = database::get_conn().expect("get sqlite connection error");

@@ -11,6 +11,7 @@ use crate::{
 use actix_multipart::form::MultipartForm;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use local_ip_address::local_ip;
+use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 use rusqlite::Connection;
 use serde::Serialize;
 use std::io::Read;
@@ -357,18 +358,7 @@ pub(crate) async fn shell_api(
     web::Json(shell_data): web::Json<ShellData>,
 ) -> actix_web::Result<impl Responder> {
     let serial = shell_data.serial.clone();
-    let mut cmd = shell_data.cmd.clone();
-    //if cmd is settings put global http_proxy,modify PROXY_URL
-    if cmd.starts_with("settings put global http_proxy") {
-        match std::env::var("PROXY_URL") {
-            Ok(proxy_url) => {
-                cmd = format!("settings put global http_proxy {}", proxy_url);
-            }
-            Err(_) => {
-                log::error!("PROXY_URL is not set in env");
-            }
-        }
-    }
+    let cmd = shell_data.cmd.clone();
 
     let devices = device_dao::list_online_device(serial, None)?;
     for device in devices.data {
@@ -542,13 +532,14 @@ pub(crate) async fn get_dialog_watcher_api() -> actix_web::Result<impl Responder
 //get settings
 #[derive(serde::Serialize, serde::Deserialize)]
 struct Settings {
-    proxy_url: String,
-    server_url: String,
-    country: String,
-    wifi_name: String,
-    wifi_password: String,
-    version: String,
-    adb_mode: String,
+    proxy_url: Option<String>,
+    server_url: Option<String>,
+    timezone: Option<String>,
+    wifi_name: Option<String>,
+    wifi_password: Option<String>,
+    version: Option<String>,
+    adb_mode: Option<String>,
+    license: Option<String>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 struct SettingsResponseData {
@@ -560,19 +551,21 @@ pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
     //get setting from env
     let proxy_url = std::env::var("PROXY_URL").unwrap_or_else(|_| "".to_string());
     let server_url = std::env::var("SERVER_URL").unwrap_or_else(|_| "".to_string());
-    let country = std::env::var("COUNTRY").unwrap_or_else(|_| "".to_string());
+    let timezone = std::env::var("TIMEZONE").unwrap_or_else(|_| "".to_string());
     let wifi_name = std::env::var("WIFI_NAME").unwrap_or_else(|_| "".to_string());
     let wifi_password = std::env::var("WIFI_PASSWORD").unwrap_or_else(|_| "".to_string());
     let version = std::env::var("VERSION").unwrap_or_else(|_| "".to_string());
     let adb_mode = std::env::var("ADB_MODE").unwrap_or_else(|_| "usb".to_string());
+    let license = std::env::var("LICENSE").unwrap_or_else(|_| "".to_string());
     let settings = Settings {
-        proxy_url,
-        server_url,
-        country,
-        wifi_name,
-        wifi_password,
-        version,
-        adb_mode,
+        proxy_url: Some(proxy_url),
+        server_url: Some(server_url),
+        timezone: Some(timezone),
+        wifi_name: Some(wifi_name),
+        wifi_password: Some(wifi_password),
+        version: Some(version),
+        adb_mode: Some(adb_mode),
+        license: Some(license),
     };
     Ok(web::Json(SettingsResponseData {
         code: 0,
@@ -583,15 +576,111 @@ pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
 pub(crate) async fn update_settings_api(
     web::Json(settings): web::Json<Settings>,
 ) -> actix_web::Result<impl Responder> {
-    std::env::set_var("PROXY_URL", settings.proxy_url);
-    std::env::set_var("SERVER_URL", settings.server_url);
-    std::env::set_var("COUNTRY", settings.country);
-    std::env::set_var("WIFI_NAME", settings.wifi_name);
-    std::env::set_var("WIFI_PASSWORD", settings.wifi_password);
-    std::env::set_var("VERSION", settings.version);
-    std::env::set_var("ADB_MODE", settings.adb_mode);
+    set_settings(settings);
+    setup_env();
     Ok(HttpResponse::NoContent())
 }
+fn get_db() -> PickleDb {
+    PickleDb::load(
+        "data/settings.db",
+        PickleDbDumpPolicy::AutoDump,
+        SerializationMethod::Json,
+    )
+    .unwrap_or_else(|_| {
+        PickleDb::new(
+            "data/settings.db",
+            PickleDbDumpPolicy::AutoDump,
+            SerializationMethod::Json,
+        )
+    })
+}
+pub fn setup_env() {
+    let settings = get_settings();
+    std::env::set_var("PROXY_URL", &settings.proxy_url.unwrap());
+    std::env::set_var("SERVER_URL", &settings.server_url.unwrap());
+    std::env::set_var("TIMEZONE", &settings.timezone.unwrap());
+    std::env::set_var("WIFI_NAME", &settings.wifi_name.unwrap());
+    std::env::set_var("WIFI_PASSWORD", &settings.wifi_password.unwrap());
+    std::env::set_var("VERSION", &settings.version.unwrap());
+    std::env::set_var("LICENSE", &settings.license.unwrap());
+
+    // if cfg!(debug_assertions) {
+    //     std::env::set_var("RUST_BACKTRACE", "1");
+    // }
+}
+fn set_settings(settings: Settings) {
+    let mut db = get_db();
+    let proxy_url = settings.proxy_url;
+    if let Some(url) = proxy_url {
+        db.set("proxy_url", &url).unwrap();
+    }
+    let server_url = settings.server_url;
+    if let Some(url) = server_url {
+        db.set("server_url", &url).unwrap();
+    }
+    let timtzone = settings.timezone;
+    if let Some(timtzone) = timtzone {
+        db.set("timtzone", &timtzone).unwrap();
+    }
+    let wifi_name = settings.wifi_name;
+    if let Some(wifi_name) = wifi_name {
+        db.set("wifi_name", &wifi_name).unwrap();
+    }
+    let wifi_password = settings.wifi_password;
+    if let Some(wifi_password) = wifi_password {
+        db.set("wifi_password", &wifi_password).unwrap();
+    }
+    let version = settings.version;
+    if let Some(version) = version {
+        db.set("version", &version).unwrap();
+    }
+    let adb_mode = settings.adb_mode;
+    if let Some(adb_mode) = adb_mode {
+        db.set("adb_mode", &adb_mode).unwrap();
+    }
+    let license = settings.license;
+    if let Some(license) = license {
+        db.set("license", &license).unwrap();
+    }
+}
+fn get_settings() -> Settings {
+    let db = get_db();
+    let proxy_url = db
+        .get::<String>("proxy_url")
+        .unwrap_or_else(|| "".to_string());
+    let server_url = db
+        .get::<String>("server_url")
+        .unwrap_or_else(|| "".to_string());
+    let timezone = db
+        .get::<String>("timezone")
+        .unwrap_or_else(|| "".to_string());
+    let wifi_name = db
+        .get::<String>("wifi_name")
+        .unwrap_or_else(|| "".to_string());
+    let wifi_password = db
+        .get::<String>("wifi_password")
+        .unwrap_or_else(|| "".to_string());
+    let version = db
+        .get::<String>("version")
+        .unwrap_or_else(|| "".to_string());
+    let adb_mode = db
+        .get::<String>("adb_mode")
+        .unwrap_or_else(|| "usb".to_string());
+    let license = db
+        .get::<String>("license")
+        .unwrap_or_else(|| "".to_string());
+    Settings {
+        proxy_url: Some(proxy_url),
+        server_url: Some(server_url),
+        timezone: Some(timezone),
+        wifi_name: Some(wifi_name),
+        wifi_password: Some(wifi_password),
+        version: Some(version),
+        adb_mode: Some(adb_mode),
+        license: Some(license),
+    }
+}
+
 #[get("/api/device/task_status")]
 pub(crate) async fn task_status_api(
     web::Query(query): web::Query<HashMap<String, String>>,
