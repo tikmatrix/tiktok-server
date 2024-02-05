@@ -13,7 +13,7 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use local_ip_address::local_ip;
 use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 use rusqlite::Connection;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::io::Read;
 use std::path::Path;
@@ -793,4 +793,112 @@ pub(crate) async fn gen_name_api() -> actix_web::Result<impl Responder> {
         }
     }
     return Ok(web::Json(UsernameResponse { usernames: vec![] }));
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+struct EmailResponse {
+    email: String,
+}
+#[get("/api/gen_email")]
+pub(crate) async fn gen_email_api() -> actix_web::Result<impl Responder> {
+    let email_suffix = std::env::var("EMAIL_SUFFIX").unwrap_or_else(|_| "".to_string());
+    if email_suffix.is_empty() {
+        return Ok(web::Json(EmailResponse {
+            email: "".to_string(),
+        }));
+    }
+    //romdom email in 10 words
+    let email: String =
+        rand::Rng::sample_iter(rand::thread_rng(), &rand::distributions::Alphanumeric)
+            .take(10)
+            .map(char::from)
+            .collect::<String>()
+            .to_lowercase();
+    let email = format!("{}{}", email, email_suffix);
+    log::info!("gen_email -> {}", email);
+    return Ok(web::Json(EmailResponse { email }));
+}
+#[get("/api/add_license")]
+pub(crate) async fn add_license_api(
+    web::Query(query): web::Query<HashMap<String, String>>,
+) -> actix_web::Result<impl Responder> {
+    let key = query
+        .get("key")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing key query parameter"))?
+        .clone();
+    let license = add_license(key);
+    Ok(web::Json(license))
+}
+fn add_license(key: String) -> VerifyLicenseResponse {
+    let uid: String = machine_uid::get().unwrap();
+    let result: VerifyLicenseResponse = VerifyLicenseResponse {
+        uid: uid.clone(),
+        key: "".to_string(),
+        status: "unlicensed".to_string(),
+        name: None,
+        limit: None,
+        left_days: None,
+    };
+    let license = request_util::get_json_api::<VerifyLicenseResponse>(&format!(
+        "/api/license/verify?uid={}&key={}",
+        uid, key
+    ));
+    if let Ok(license) = license {
+        let mut db = get_db();
+        db.set("license", &key).unwrap();
+        return license;
+    } else {
+        let mut db = get_db();
+        db.set("license", &"").unwrap();
+    }
+    return result;
+}
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct VerifyLicenseResponse {
+    pub uid: String,
+    pub key: String,
+    pub status: String,
+    pub name: Option<String>,
+    pub limit: Option<i32>,
+    pub left_days: Option<i32>,
+}
+#[get("/api/get_license")]
+pub(crate) async fn get_license_api() -> actix_web::Result<impl Responder> {
+    let license = get_license();
+    Ok(web::Json(license))
+}
+fn get_license() -> VerifyLicenseResponse {
+    let uid: String = machine_uid::get().unwrap();
+    let result: VerifyLicenseResponse = VerifyLicenseResponse {
+        uid: uid.clone(),
+        key: "".to_string(),
+        status: "unlicensed".to_string(),
+        name: None,
+        limit: None,
+        left_days: None,
+    };
+    let db = PickleDb::load(
+        "data/settings.db",
+        PickleDbDumpPolicy::AutoDump,
+        SerializationMethod::Json,
+    )
+    .unwrap_or_else(|_| {
+        PickleDb::new(
+            "data/settings.db",
+            PickleDbDumpPolicy::AutoDump,
+            SerializationMethod::Json,
+        )
+    });
+    let key = db.get::<String>("license");
+    if key.is_none() {
+        return result;
+    }
+    let key = key.unwrap();
+    let license = request_util::get_json_api::<VerifyLicenseResponse>(&format!(
+        "/api/license/verify?uid={}&key={}",
+        uid, key
+    ));
+    if let Ok(license) = license {
+        return license;
+    }
+    return result;
 }
