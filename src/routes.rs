@@ -14,6 +14,7 @@ use local_ip_address::local_ip;
 use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 use rusqlite::Connection;
 use serde::Serialize;
+use serde_json::{json, Value};
 use std::io::Read;
 use std::path::Path;
 use std::sync::mpsc::Sender;
@@ -540,6 +541,8 @@ struct Settings {
     version: Option<String>,
     adb_mode: Option<String>,
     license: Option<String>,
+    openai_api_key: Option<String>,
+    email_suffix: Option<String>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 struct SettingsResponseData {
@@ -557,6 +560,8 @@ pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
     let version = std::env::var("VERSION").unwrap_or_else(|_| "".to_string());
     let adb_mode = std::env::var("ADB_MODE").unwrap_or_else(|_| "usb".to_string());
     let license = std::env::var("LICENSE").unwrap_or_else(|_| "".to_string());
+    let openai_api_key = std::env::var("OPENAI_API_KEY").unwrap_or_else(|_| "".to_string());
+    let email_suffix = std::env::var("EMAIL_SUFFIX").unwrap_or_else(|_| "".to_string());
     let settings = Settings {
         proxy_url: Some(proxy_url),
         server_url: Some(server_url),
@@ -566,6 +571,8 @@ pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
         version: Some(version),
         adb_mode: Some(adb_mode),
         license: Some(license),
+        openai_api_key: Some(openai_api_key),
+        email_suffix: Some(email_suffix),
     };
     Ok(web::Json(SettingsResponseData {
         code: 0,
@@ -603,7 +610,8 @@ pub fn setup_env() {
     std::env::set_var("WIFI_PASSWORD", &settings.wifi_password.unwrap());
     std::env::set_var("VERSION", &settings.version.unwrap());
     std::env::set_var("LICENSE", &settings.license.unwrap());
-
+    std::env::set_var("OPENAI_API_KEY", &settings.openai_api_key.unwrap());
+    std::env::set_var("EMAIL_SUFFIX", &settings.email_suffix.unwrap());
     // if cfg!(debug_assertions) {
     //     std::env::set_var("RUST_BACKTRACE", "1");
     // }
@@ -642,6 +650,14 @@ fn set_settings(settings: Settings) {
     if let Some(license) = license {
         db.set("license", &license).unwrap();
     }
+    let openai_api_key = settings.openai_api_key;
+    if let Some(openai_api_key) = openai_api_key {
+        db.set("openai_api_key", &openai_api_key).unwrap();
+    }
+    let email_suffix = settings.email_suffix;
+    if let Some(email_suffix) = email_suffix {
+        db.set("email_suffix", &email_suffix).unwrap();
+    }
 }
 fn get_settings() -> Settings {
     let db = get_db();
@@ -669,6 +685,12 @@ fn get_settings() -> Settings {
     let license = db
         .get::<String>("license")
         .unwrap_or_else(|| "".to_string());
+    let openai_api_key = db
+        .get::<String>("openai_api_key")
+        .unwrap_or_else(|| "".to_string());
+    let email_suffix = db
+        .get::<String>("email_suffix")
+        .unwrap_or_else(|| "".to_string());
     Settings {
         proxy_url: Some(proxy_url),
         server_url: Some(server_url),
@@ -678,6 +700,8 @@ fn get_settings() -> Settings {
         version: Some(version),
         adb_mode: Some(adb_mode),
         license: Some(license),
+        openai_api_key: Some(openai_api_key),
+        email_suffix: Some(email_suffix),
     }
 }
 
@@ -708,4 +732,65 @@ pub(crate) async fn task_status_api(
             data: "error".to_string(),
         }))
     }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+struct UsernameResponse {
+    usernames: Vec<String>,
+}
+#[get("/api/gen_name")]
+pub(crate) async fn gen_name_api() -> actix_web::Result<impl Responder> {
+    let api_key = std::env::var("OPENAI_API_KEY").unwrap_or_else(|_| "".to_string());
+    // check api key
+    if api_key.is_empty() {
+        return Ok(web::Json(UsernameResponse { usernames: vec![] }));
+    }
+    let data = json!({
+        "model": "gpt-3.5-turbo-0125",
+        "response_format": { "type": "json_object" },
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant designed to output JSON."
+            },
+            {
+                "role": "user",
+                "content": "create for me 10 usernames for tiktok accounts. Make each username contain of short length words alternating a girls name, an adjective like a color, and a word that describes baking or dessert items. Each should be 3 separate words for each username joined together and consist of a girls name, baking or dessert word, and an adjective such as a color."
+            }
+        ]
+    });
+
+    let client = reqwest::Client::new();
+
+    let response = client
+        .post("https://api.openai.com/v1/chat/completions")
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&data)
+        .send()
+        .await;
+    if let Ok(response) = response {
+        if response.status().is_success() {
+            if let Ok(json) = response.json::<Value>().await {
+                log::info!("response: {:?}", json);
+                let content = json
+                    .get("choices")
+                    .and_then(|choices| choices.get(0))
+                    .and_then(|completion| completion.get("message"))
+                    .and_then(|message| message.get("content"))
+                    .and_then(|content| content.as_str())
+                    .ok_or_else(|| {
+                        web::Json(ResponseData {
+                            data: "error".to_string(),
+                        })
+                    });
+                if let Ok(content) = content {
+                    let usernames: UsernameResponse = serde_json::from_str(content)?;
+                    return Ok(web::Json(usernames));
+                } else {
+                    log::error!("response error: {:?}", json);
+                }
+            }
+        }
+    }
+    return Ok(web::Json(UsernameResponse { usernames: vec![] }));
 }
