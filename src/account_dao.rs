@@ -9,7 +9,7 @@ pub fn save(conn: &Mutex<Connection>, data: AccountData) -> Result<(), RunTimeEr
     let _lock = conn.lock();
     let conn = database::get_conn()?;
     conn.execute(
-        "INSERT INTO account (email, pwd, fans, shop_creator, device,group_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        "INSERT INTO account (email, pwd, fans, shop_creator, device,group_id,username) VALUES (?1, ?2, ?3, ?4, ?5, ?6,?7)",
         rusqlite::params![
             data.email,
             data.pwd,
@@ -17,6 +17,7 @@ pub fn save(conn: &Mutex<Connection>, data: AccountData) -> Result<(), RunTimeEr
             data.shop_creator,
             data.device.unwrap_or_default(),
             data.group_id.unwrap_or_default(),
+            data.username.unwrap_or_default(),
         ],
     )?;
     Ok(())
