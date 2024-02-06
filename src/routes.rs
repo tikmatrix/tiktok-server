@@ -1,11 +1,12 @@
 use crate::ddl_actor::DdlMessage;
 use crate::models::{
-    AccountData, DeviceData, DialogWatcherData, GroupData, MaterialData, MaterialFormData,
-    MaterialUesData, MusicData, PublishJobData, ResponseData, ScriptQueryParams, TrainJobData,
+    AccountData, AvatarData, AvatarFormData, DeviceData, DialogWatcherData, GroupData,
+    MaterialData, MaterialFormData, MaterialUesData, MusicData, PublishJobData, ResponseData,
+    ScriptQueryParams, TrainJobData,
 };
 use crate::models::{InstallFormData, ShellData};
 use crate::{
-    account_dao, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
+    account_dao, avatar_dao, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
     publish_job_dao, request_util, train_job_dao,
 };
 use actix_multipart::form::MultipartForm;
@@ -82,6 +83,24 @@ pub(crate) async fn delete_account_api(
         .clone();
     web::block(move || account_dao::del(id)).await??;
     Ok(HttpResponse::NoContent())
+}
+#[get("/api/update_username")]
+pub(crate) async fn update_username_api(
+    conn: web::Data<Mutex<Connection>>,
+    web::Query(query): web::Query<HashMap<String, String>>,
+) -> actix_web::Result<impl Responder> {
+    let old_username = query
+        .get("old_username")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing old_username query parameter"))?
+        .clone();
+    let new_username = query
+        .get("new_username")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing new_username query parameter"))?
+        .clone();
+    web::block(move || account_dao::update_username(&conn, &old_username, &new_username)).await??;
+    Ok(web::Json(ResponseData {
+        data: "ok".to_string(),
+    }))
 }
 #[post("/api/install")]
 pub(crate) async fn install_api(
@@ -718,7 +737,7 @@ pub(crate) async fn task_status_api(
             )
             .await;
             if let Ok(result) = result {
-                log::info!("{} -> task_status result: {:?}", device.serial, result);
+                log::debug!("{} -> task_status result: {:?}", device.serial, result);
                 return Ok(web::Json(result));
             } else {
                 log::error!("{} -> task_status error: {:?}", device.serial, result);
@@ -960,4 +979,58 @@ fn get_license() -> VerifyLicenseResponse {
         return license;
     }
     return result;
+}
+#[post("/api/avatar")]
+pub(crate) async fn add_avatar_api(
+    conn: web::Data<Mutex<Connection>>,
+    MultipartForm(form): MultipartForm<AvatarFormData>,
+) -> actix_web::Result<impl Responder> {
+    let mut avatars: Vec<AvatarData> = Vec::new();
+    for f in form.files {
+        let file_name = f.file_name.unwrap();
+        let extension = Path::new(&file_name)
+            .extension()
+            .and_then(std::ffi::OsStr::to_str)
+            .unwrap_or("");
+        let name = format!("{}.{}", Uuid::new_v4(), extension);
+        let path = format!("upload/avatar/{}", name);
+        log::debug!("saving to {path}");
+        f.file.persist(path.clone()).unwrap();
+        let mut file = File::open(path).unwrap();
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer).unwrap();
+        avatars.push(AvatarData {
+            id: None,
+            name: format!("avatar/{}", name),
+        });
+    }
+
+    web::block(move || avatar_dao::save(&conn, avatars)).await??;
+    Ok(HttpResponse::Ok())
+}
+#[get("/api/avatar")]
+pub(crate) async fn get_avatar_api() -> actix_web::Result<impl Responder> {
+    let avatar_response_data = web::block(move || avatar_dao::list_all()).await??;
+    Ok(web::Json(avatar_response_data))
+}
+#[delete("/api/avatar")]
+pub(crate) async fn delete_avatar_api(
+    conn: web::Data<Mutex<Connection>>,
+    web::Query(query): web::Query<HashMap<String, String>>,
+) -> actix_web::Result<impl Responder> {
+    let id = query
+        .get("id")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing id query parameter"))?
+        .clone();
+    //convert id i32
+    let id = id
+        .parse::<i32>()
+        .map_err(|_| actix_web::error::ErrorBadRequest("Invalid id query parameter"))?;
+    web::block(move || avatar_dao::delete(&conn, id)).await??;
+    Ok(HttpResponse::NoContent())
+}
+#[get("/api/avatar/random")]
+pub(crate) async fn get_avatar_random_api() -> actix_web::Result<impl Responder> {
+    let avatar_response_data = web::block(move || avatar_dao::random_one()).await??;
+    Ok(web::Json(avatar_response_data))
 }

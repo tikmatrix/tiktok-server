@@ -237,3 +237,16 @@ pub fn list_auto_train_account_by_agent_ip(
     }
     Ok(AccountResponseData { data })
 }
+pub fn update_username(
+    conn: &Mutex<Connection>,
+    old_username: &str,
+    new_username: &str,
+) -> Result<(), RunTimeError> {
+    let _lock = conn.lock();
+    let conn = database::get_conn()?;
+    conn.execute(
+        "UPDATE account SET username = ?1 WHERE username = ?2",
+        rusqlite::params![new_username, old_username],
+    )?;
+    Ok(())
+}

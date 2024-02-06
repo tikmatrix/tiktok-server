@@ -242,3 +242,22 @@ pub struct DialogWatcherDetails {
 pub struct DialogWatcherResponseData {
     pub data: Vec<DialogWatcherDetails>,
 }
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AvatarData {
+    pub id: Option<i32>,
+    pub name: String,
+}
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AvatarDetails {
+    pub id: i32,
+    pub name: String,
+}
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AvatarResponseData {
+    pub data: Vec<AvatarDetails>,
+}
+#[derive(Debug, MultipartForm)]
+pub struct AvatarFormData {
+    #[multipart(limit = "512 MiB")]
+    pub files: Vec<TempFile>,
+}

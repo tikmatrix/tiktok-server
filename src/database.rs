@@ -122,6 +122,14 @@ pub fn create_databases() -> Result<(), RunTimeError> {
         (),
     )?;
     conn.execute(
+        "CREATE TABLE IF NOT EXISTS avatar (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            create_time TEXT DEFAULT CURRENT_TIMESTAMP
+          );",
+        (),
+    )?;
+    conn.execute(
         "CREATE TABLE IF NOT EXISTS publish_job (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             group_id INTEGER  DEFAULT 0,

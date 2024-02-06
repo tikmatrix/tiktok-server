@@ -18,6 +18,7 @@ use std::io;
 use std::sync::Arc;
 use std::sync::Mutex;
 mod account_dao;
+mod avatar_dao;
 mod database;
 mod ddl_actor;
 mod device_dao;
@@ -134,6 +135,12 @@ async fn main() -> io::Result<()> {
             .service(routes::gen_name_api)
             .service(routes::gen_bio_api)
             .service(routes::gen_email_api)
+            .service(routes::add_avatar_api)
+            .service(routes::get_avatar_api)
+            .service(routes::delete_avatar_api)
+            .service(routes::get_avatar_random_api)
+            .service(routes::update_username_api)
+            .service(fs::Files::new("/avatar", "./upload/avatar/").index_file("index.html"))
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))
             .service(fs::Files::new("/", "./bin/dist/").index_file("index.html"))
