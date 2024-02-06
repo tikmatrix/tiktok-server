@@ -734,6 +734,65 @@ pub(crate) async fn task_status_api(
     }
 }
 #[derive(serde::Serialize, serde::Deserialize)]
+struct BioResponse {
+    bios: Vec<String>,
+}
+#[get("/api/gen_bio")]
+pub(crate) async fn gen_bio_api() -> actix_web::Result<impl Responder> {
+    let api_key = std::env::var("OPENAI_API_KEY").unwrap_or_else(|_| "".to_string());
+    // check api key
+    if api_key.is_empty() {
+        return Ok(web::Json(BioResponse { bios: vec![] }));
+    }
+    let data = json!({
+        "model": "gpt-3.5-turbo-0125",
+        "response_format": { "type": "json_object" },
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant designed to output JSON."
+            },
+            {
+                "role": "user",
+                "content": "create for me a bios that are 3-5 word tiktok bios for an intriguing storytime tiktok page. each should end in an exclamation point and make the viewer intrigued to follow the account. Make each without quotation marks. only capitalize the first letter in the first word.",
+            }
+        ]
+    });
+    let client = reqwest::Client::new();
+    let response = client
+        .post("https://api.openai.com/v1/chat/completions")
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&data)
+        .send()
+        .await;
+    if let Ok(response) = response {
+        if response.status().is_success() {
+            if let Ok(json) = response.json::<Value>().await {
+                log::info!("response: {:?}", json);
+                let content = json
+                    .get("choices")
+                    .and_then(|choices| choices.get(0))
+                    .and_then(|completion| completion.get("message"))
+                    .and_then(|message| message.get("content"))
+                    .and_then(|content| content.as_str())
+                    .ok_or_else(|| {
+                        web::Json(ResponseData {
+                            data: "error".to_string(),
+                        })
+                    });
+                if let Ok(content) = content {
+                    let bios: BioResponse = serde_json::from_str(content)?;
+                    return Ok(web::Json(bios));
+                } else {
+                    log::error!("response error: {:?}", json);
+                }
+            }
+        }
+    }
+    return Ok(web::Json(BioResponse { bios: vec![] }));
+}
+#[derive(serde::Serialize, serde::Deserialize)]
 struct UsernameResponse {
     usernames: Vec<String>,
 }
