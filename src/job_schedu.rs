@@ -1,5 +1,6 @@
 use actix::prelude::*;
 use actix_web::web;
+use rand::{seq::SliceRandom, thread_rng};
 use rusqlite::Connection;
 
 use std::{sync::Mutex, time::Duration};
@@ -165,13 +166,24 @@ impl JobScheduActor {
                                     //create publish_job
                                     let account_clone = account.clone();
                                     let group_clone = group.clone();
+                                    //random get a title
+                                    let title = group_clone.title.unwrap();
+                                    let title_lines: Vec<&str> = title
+                                        .split("\n")
+                                        .filter(|line| !line.trim().is_empty())
+                                        .collect();
 
+                                    let random_line = title_lines.choose(&mut thread_rng());
+
+                                    let title = match random_line {
+                                        Some(line) => *line,
+                                        None => "",
+                                    };
                                     let job_data = PublishJobData {
                                         id: None,
                                         material: Some(material),
                                         account: Some(account_clone.email),
-                                        title: group_clone.title,
-                                        tags: group_clone.tags,
+                                        title: Some(title.to_string()),
                                         status: Some(0),
                                         start_time: Some(start_time),
                                         group_id: Some(group_clone.id),

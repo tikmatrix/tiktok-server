@@ -8,12 +8,12 @@ pub fn save(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), Ru
     let _lock = conn.lock();
     let conn = database::get_conn()?;
     conn.execute(
-        "INSERT INTO publish_job (material, account, title, tags, status, start_time,publish_type,product_link,group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)",
+        "INSERT INTO publish_job (material, account, title, status, start_time,publish_type,product_link,group_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         rusqlite::params![
             job_data.material,
             job_data.account,
             job_data.title,
-            job_data.tags,
             job_data.status,
             job_data.start_time,
             job_data.publish_type,
@@ -45,7 +45,7 @@ pub fn update(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), 
 pub fn list_all() -> Result<PublishJobResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare("
-    SELECT publish_job.id,publish_job.material, publish_job.account, publish_job.title, publish_job.tags, publish_job.status, 
+    SELECT publish_job.id,publish_job.material, publish_job.account, publish_job.title, publish_job.status, 
     publish_job.start_time,publish_job.end_time,account.device,publish_job.group_id,
     publish_job.publish_type,publish_job.product_link,account.username
     FROM publish_job
@@ -59,15 +59,14 @@ pub fn list_all() -> Result<PublishJobResponseData, RunTimeError> {
             material: row.get(1)?,
             account: row.get(2)?,
             title: row.get(3)?,
-            tags: row.get(4)?,
-            status: row.get(5)?,
-            start_time: row.get(6)?,
-            end_time: row.get(7)?,
-            device: row.get(8)?,
-            group_id: row.get(9)?,
-            publish_type: row.get(10)?,
-            product_link: row.get(11)?,
-            username: row.get(12)?,
+            status: row.get(4)?,
+            start_time: row.get(5)?,
+            end_time: row.get(6)?,
+            device: row.get(7)?,
+            group_id: row.get(8)?,
+            publish_type: row.get(9)?,
+            product_link: row.get(10)?,
+            username: row.get(11)?,
         })
     })?;
     for publish_job in job_iter {
@@ -86,7 +85,7 @@ pub fn del(id: i32) -> Result<(), RunTimeError> {
 pub fn list_runable(agent_ip: String) -> Result<PublishJobResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare("
-    SELECT publish_job.id,publish_job.material, publish_job.account, publish_job.title, publish_job.tags, 
+    SELECT publish_job.id,publish_job.material, publish_job.account, publish_job.title, 
     publish_job.status, publish_job.start_time,publish_job.end_time,account.device,publish_job.group_id,
     publish_job.publish_type,publish_job.product_link,account.username
     FROM publish_job
@@ -104,15 +103,14 @@ pub fn list_runable(agent_ip: String) -> Result<PublishJobResponseData, RunTimeE
             material: row.get(1)?,
             account: row.get(2)?,
             title: row.get(3)?,
-            tags: row.get(4)?,
-            status: row.get(5)?,
-            start_time: row.get(6)?,
-            end_time: row.get(7)?,
-            device: row.get(8)?,
-            group_id: row.get(9)?,
-            publish_type: row.get(10)?,
-            product_link: row.get(11)?,
-            username: row.get(12)?,
+            status: row.get(4)?,
+            start_time: row.get(5)?,
+            end_time: row.get(6)?,
+            device: row.get(7)?,
+            group_id: row.get(8)?,
+            publish_type: row.get(9)?,
+            product_link: row.get(10)?,
+            username: row.get(11)?,
         })
     })?;
     for publish_job in job_iter {

@@ -79,7 +79,6 @@ pub struct PublishJobData {
     pub material: Option<String>,
     pub account: Option<String>,
     pub title: Option<String>,
-    pub tags: Option<String>,
     pub status: Option<i32>,
     pub start_time: Option<String>,
     pub group_id: Option<i32>,
@@ -92,7 +91,6 @@ pub struct PublishJobDetails {
     pub material: String,
     pub account: String,
     pub title: Option<String>,
-    pub tags: Option<String>,
     pub status: i32,
     pub start_time: String,
     pub end_time: String,
@@ -185,7 +183,6 @@ pub struct GroupData {
     pub publish_start_time: String,
     pub train_start_time: String,
     pub title: Option<String>,
-    pub tags: Option<String>,
     pub publish_type: i32,
     pub product_link: Option<String>,
 }
@@ -198,7 +195,6 @@ pub struct GroupDetails {
     pub publish_start_time: String,
     pub train_start_time: String,
     pub title: Option<String>,
-    pub tags: Option<String>,
     pub publish_type: i32,
     pub product_link: Option<String>,
 }
