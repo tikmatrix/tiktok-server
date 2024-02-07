@@ -141,6 +141,7 @@ async fn main() -> io::Result<()> {
             .service(routes::get_avatar_random_api)
             .service(routes::update_username_api)
             .service(routes::get_license_api)
+            .service(routes::add_license_api)
             .service(fs::Files::new("/avatar", "./upload/avatar/").index_file("index.html"))
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))

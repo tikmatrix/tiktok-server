@@ -895,16 +895,19 @@ pub(crate) async fn gen_email_api() -> actix_web::Result<impl Responder> {
     log::info!("gen_email -> {}", email);
     return Ok(web::Json(EmailResponse { email }));
 }
-#[get("/api/add_license")]
+
+#[post("/api/add_license")]
 pub(crate) async fn add_license_api(
-    web::Query(query): web::Query<HashMap<String, String>>,
+    web::Json(key_data): web::Json<KeyData>,
 ) -> actix_web::Result<impl Responder> {
-    let key = query
-        .get("key")
-        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing key query parameter"))?
-        .clone();
+    let key = key_data.key.clone();
     let license = add_license(key);
     Ok(web::Json(license))
+}
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct KeyData {
+    pub key: String,
+    pub uid: Option<String>,
 }
 fn add_license(key: String) -> VerifyLicenseResponse {
     let uid: String = machine_uid::get().unwrap();
@@ -920,17 +923,23 @@ fn add_license(key: String) -> VerifyLicenseResponse {
             }
         },
     };
-    let license = request_util::get_json_api::<VerifyLicenseResponse>(&format!(
-        "/api/license/verify?uid={}&key={}",
-        uid, key
-    ));
+    let key_data = KeyData {
+        key: key.clone(),
+        uid: Some(uid),
+    };
+    let license = request_util::post_json_api::<VerifyLicenseData, KeyData>(
+        &format!("/api/license/verify",),
+        &key_data,
+    );
     if let Ok(license) = license {
         let mut db = get_db();
         db.set("license", &key).unwrap();
-        return license;
+        log::info!("add_license -> {:?}", license);
+        return VerifyLicenseResponse { data: license };
     } else {
         let mut db = get_db();
         db.set("license", &"").unwrap();
+        log::error!("clear_license -> {:?}", license);
     }
     return result;
 }
@@ -981,12 +990,16 @@ fn get_license() -> VerifyLicenseResponse {
         return result;
     }
     let key = key.unwrap();
-    let license = request_util::get_json_api::<VerifyLicenseResponse>(&format!(
-        "/api/license/verify?uid={}&key={}",
-        uid, key
-    ));
+    let key_data = KeyData {
+        key,
+        uid: Some(uid),
+    };
+    let license = request_util::post_json_api::<VerifyLicenseData, KeyData>(
+        &format!("/api/license/verify",),
+        &key_data,
+    );
     if let Ok(license) = license {
-        return license;
+        return VerifyLicenseResponse { data: license };
     }
     return result;
 }
