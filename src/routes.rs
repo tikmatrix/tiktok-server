@@ -909,12 +909,16 @@ pub(crate) async fn add_license_api(
 fn add_license(key: String) -> VerifyLicenseResponse {
     let uid: String = machine_uid::get().unwrap();
     let result: VerifyLicenseResponse = VerifyLicenseResponse {
-        uid: uid.clone(),
-        key: "".to_string(),
-        status: "unlicensed".to_string(),
-        name: None,
-        limit: None,
-        left_days: None,
+        data: {
+            VerifyLicenseData {
+                uid: uid.clone(),
+                key: "".to_string(),
+                status: "unlicensed".to_string(),
+                name: None,
+                limit: None,
+                left_days: None,
+            }
+        },
     };
     let license = request_util::get_json_api::<VerifyLicenseResponse>(&format!(
         "/api/license/verify?uid={}&key={}",
@@ -932,6 +936,10 @@ fn add_license(key: String) -> VerifyLicenseResponse {
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
 struct VerifyLicenseResponse {
+    pub data: VerifyLicenseData,
+}
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct VerifyLicenseData {
     pub uid: String,
     pub key: String,
     pub status: String,
@@ -947,12 +955,14 @@ pub(crate) async fn get_license_api() -> actix_web::Result<impl Responder> {
 fn get_license() -> VerifyLicenseResponse {
     let uid: String = machine_uid::get().unwrap();
     let result: VerifyLicenseResponse = VerifyLicenseResponse {
-        uid: uid.clone(),
-        key: "".to_string(),
-        status: "unlicensed".to_string(),
-        name: None,
-        limit: None,
-        left_days: None,
+        data: VerifyLicenseData {
+            uid: uid.clone(),
+            key: "".to_string(),
+            status: "unlicensed".to_string(),
+            name: None,
+            limit: None,
+            left_days: None,
+        },
     };
     let db = PickleDb::load(
         "data/settings.db",
