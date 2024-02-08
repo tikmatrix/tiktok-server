@@ -11,6 +11,7 @@ use crate::{
 };
 use local_ip_address::local_ip;
 use rusqlite::{types::Value, Connection, Result};
+use serde::{Deserialize, Serialize};
 
 pub fn update_init(
     conn: &Mutex<Connection>,
@@ -147,4 +148,25 @@ pub fn save(
         })
         .unwrap();
     Ok(true)
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Node {
+    pub ip: String,
+    pub count: i32,
+}
+pub fn list_online_agent() -> Result<Vec<Node>, RunTimeError> {
+    let conn = database::get_conn()?;
+    let mut stmt =
+        conn.prepare("SELECT agent_ip, count(*) as count FROM device GROUP BY agent_ip")?;
+    let rows = stmt.query_map((), |row| {
+        Ok(Node {
+            ip: row.get(0)?,
+            count: row.get(1)?,
+        })
+    })?;
+    let mut nodes: Vec<Node> = Vec::new();
+    for node in rows {
+        nodes.push(node?);
+    }
+    Ok(nodes)
 }

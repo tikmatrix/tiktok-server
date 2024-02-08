@@ -602,9 +602,22 @@ pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
 pub(crate) async fn update_settings_api(
     web::Json(settings): web::Json<Settings>,
 ) -> actix_web::Result<impl Responder> {
-    set_settings(settings);
+    set_settings(&settings);
     setup_env();
+    update_agent_settings(&settings).await;
     Ok(HttpResponse::NoContent())
+}
+async fn update_agent_settings(settings: &Settings) {
+    let nodes = device_dao::list_online_agent().unwrap();
+    for node in nodes {
+        let result = request_util::post_json::<ResponseData, Settings>(
+            node.ip.as_str(),
+            "/api/settings",
+            &settings,
+        )
+        .await;
+        log::info!("update agent settings result: {:?}", result);
+    }
 }
 fn get_db() -> PickleDb {
     PickleDb::load(
@@ -622,60 +635,75 @@ fn get_db() -> PickleDb {
 }
 pub fn setup_env() {
     let settings = get_settings();
-    std::env::set_var("PROXY_URL", &settings.proxy_url.unwrap());
-    std::env::set_var("SERVER_URL", &settings.server_url.unwrap());
-    std::env::set_var("TIMEZONE", &settings.timezone.unwrap());
-    std::env::set_var("WIFI_NAME", &settings.wifi_name.unwrap());
-    std::env::set_var("WIFI_PASSWORD", &settings.wifi_password.unwrap());
-    std::env::set_var("VERSION", &settings.version.unwrap());
-    std::env::set_var("LICENSE", &settings.license.unwrap());
-    std::env::set_var("OPENAI_API_KEY", &settings.openai_api_key.unwrap());
-    std::env::set_var("EMAIL_SUFFIX", &settings.email_suffix.unwrap());
+    std::env::set_var("PROXY_URL", &settings.proxy_url.unwrap_or_default());
+    std::env::set_var("SERVER_URL", &settings.server_url.unwrap_or_default());
+    std::env::set_var("TIMEZONE", &settings.timezone.unwrap_or_default());
+    std::env::set_var("WIFI_NAME", &settings.wifi_name.unwrap_or_default());
+    std::env::set_var("WIFI_PASSWORD", &settings.wifi_password.unwrap_or_default());
+    std::env::set_var("VERSION", &settings.version.unwrap_or_default());
+    std::env::set_var("ADB_MODE", &settings.adb_mode.unwrap_or_default());
+    std::env::set_var("LICENSE", &settings.license.unwrap_or_default());
+    std::env::set_var(
+        "OPENAI_API_KEY",
+        &settings.openai_api_key.unwrap_or_default(),
+    );
+    std::env::set_var("EMAIL_SUFFIX", &settings.email_suffix.unwrap_or_default());
+
     // if cfg!(debug_assertions) {
     //     std::env::set_var("RUST_BACKTRACE", "1");
     // }
 }
-fn set_settings(settings: Settings) {
+fn set_settings(settings: &Settings) {
     let mut db = get_db();
-    let proxy_url = settings.proxy_url;
-    if let Some(url) = proxy_url {
-        db.set("proxy_url", &url).unwrap();
+    if let Some(proxy_url) = &settings.proxy_url {
+        if !proxy_url.is_empty() {
+            db.set("proxy_url", proxy_url).unwrap();
+        }
     }
-    let server_url = settings.server_url;
-    if let Some(url) = server_url {
-        db.set("server_url", &url).unwrap();
+    if let Some(server_url) = &settings.server_url {
+        if !server_url.is_empty() {
+            db.set("server_url", server_url).unwrap();
+        }
     }
-    let timtzone = settings.timezone;
-    if let Some(timtzone) = timtzone {
-        db.set("timtzone", &timtzone).unwrap();
+    if let Some(timezone) = &settings.timezone {
+        if !timezone.is_empty() {
+            db.set("timezone", timezone).unwrap();
+        }
     }
-    let wifi_name = settings.wifi_name;
-    if let Some(wifi_name) = wifi_name {
-        db.set("wifi_name", &wifi_name).unwrap();
+    if let Some(wifi_name) = &settings.wifi_name {
+        if !wifi_name.is_empty() {
+            db.set("wifi_name", wifi_name).unwrap();
+        }
     }
-    let wifi_password = settings.wifi_password;
-    if let Some(wifi_password) = wifi_password {
-        db.set("wifi_password", &wifi_password).unwrap();
+    if let Some(wifi_password) = &settings.wifi_password {
+        if !wifi_password.is_empty() {
+            db.set("wifi_password", wifi_password).unwrap();
+        }
     }
-    let version = settings.version;
-    if let Some(version) = version {
-        db.set("version", &version).unwrap();
+    if let Some(version) = &settings.version {
+        if !version.is_empty() {
+            db.set("version", version).unwrap();
+        }
     }
-    let adb_mode = settings.adb_mode;
-    if let Some(adb_mode) = adb_mode {
-        db.set("adb_mode", &adb_mode).unwrap();
+    if let Some(adb_mode) = &settings.adb_mode {
+        if !adb_mode.is_empty() {
+            db.set("adb_mode", adb_mode).unwrap();
+        }
     }
-    let license = settings.license;
-    if let Some(license) = license {
-        db.set("license", &license).unwrap();
+    if let Some(license) = &settings.license {
+        if !license.is_empty() {
+            db.set("license", license).unwrap();
+        }
     }
-    let openai_api_key = settings.openai_api_key;
-    if let Some(openai_api_key) = openai_api_key {
-        db.set("openai_api_key", &openai_api_key).unwrap();
+    if let Some(openai_api_key) = &settings.openai_api_key {
+        if !openai_api_key.is_empty() {
+            db.set("openai_api_key", openai_api_key).unwrap();
+        }
     }
-    let email_suffix = settings.email_suffix;
-    if let Some(email_suffix) = email_suffix {
-        db.set("email_suffix", &email_suffix).unwrap();
+    if let Some(email_suffix) = &settings.email_suffix {
+        if !email_suffix.is_empty() {
+            db.set("email_suffix", email_suffix).unwrap();
+        }
     }
 }
 fn get_settings() -> Settings {

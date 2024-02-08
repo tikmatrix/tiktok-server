@@ -167,7 +167,7 @@ impl JobScheduActor {
                                     let account_clone = account.clone();
                                     let group_clone = group.clone();
                                     //random get a title
-                                    let title = group_clone.title.unwrap();
+                                    let title = group_clone.title.unwrap_or("".to_string());
                                     let title_lines: Vec<&str> = title
                                         .split("\n")
                                         .filter(|line| !line.trim().is_empty())
