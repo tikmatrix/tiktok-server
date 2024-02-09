@@ -61,21 +61,35 @@ impl JobScheduActor {
                             {
                                 continue;
                             }
-                            let account_clone = account.clone();
+                            let uesrname = account.clone().username;
+                            if uesrname.is_none() {
+                                log::warn!("account.username is none");
+                                continue;
+                            }
+                            let username = uesrname.unwrap();
+                            if username.is_empty() {
+                                log::warn!("account.username is empty");
+                                continue;
+                            }
+                            //check username is email
+                            if username.contains("@") {
+                                log::warn!("account.username is a email");
+                                continue;
+                            }
                             let result: Result<i32, crate::runtime_err::RunTimeError> =
                                 train_job_dao::count_job_by_account_today(
-                                    account_clone.email,
+                                    username.clone(),
                                     start_time.to_owned(),
                                 );
                             if let Ok(count) = result {
                                 if count == 0 {
                                     //create train_job
-                                    let account_clone = account.clone();
+                                    let username = username.clone();
                                     let group_clone = group.clone();
                                     let job_data = TrainJobData {
                                         id: None,
                                         group_id: Some(group_clone.id),
-                                        account: Some(account_clone.email),
+                                        account: Some(username),
                                         click: Some(1),
                                         follow: Some(1),
                                         favorites: Some(1),

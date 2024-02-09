@@ -122,8 +122,8 @@ pub fn count_job_by_account_today(
     let mut stmt = conn.prepare(
         "
     SELECT count(*) FROM train_job
-    left join account on train_job.account = account.email
-    WHERE account.email = ?1 AND train_job.start_time = ?2 AND DATE(create_time) = DATE('now')
+    left join account on train_job.account = account.username
+    WHERE account.username = ?1 AND train_job.start_time = ?2 AND DATE(create_time) = DATE('now')
     ",
     )?;
     let mut count = 0;
