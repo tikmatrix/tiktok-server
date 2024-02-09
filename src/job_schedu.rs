@@ -61,7 +61,9 @@ impl JobScheduActor {
                             {
                                 continue;
                             }
-                            let uesrname = account.clone().username;
+                            let account = account.clone();
+                            let uesrname = account.username;
+                            let email = account.email;
                             if uesrname.is_none() {
                                 log::warn!("account.username is none");
                                 continue;
@@ -72,8 +74,8 @@ impl JobScheduActor {
                                 continue;
                             }
                             //check username is email
-                            if username.contains("@") {
-                                log::warn!("account.username is a email");
+                            if username.is_empty() || username == email {
+                                log::info!("username is empty or email,can't use it to publish");
                                 continue;
                             }
                             let result: Result<i32, crate::runtime_err::RunTimeError> =
@@ -149,7 +151,9 @@ impl JobScheduActor {
                             {
                                 continue;
                             }
-                            let uesrname = account.clone().username;
+                            let account = account.clone();
+                            let uesrname = account.username;
+                            let email = account.email;
                             if uesrname.is_none() {
                                 log::warn!("account.username is none");
                                 continue;
@@ -160,8 +164,8 @@ impl JobScheduActor {
                                 continue;
                             }
                             //check username is email
-                            if username.contains("@") {
-                                log::warn!("account.username is a email");
+                            if username.is_empty() || username == email {
+                                log::info!("username is empty or email,can't use it to publish");
                                 continue;
                             }
                             let result = publish_job_dao::count_job_by_account_today(
