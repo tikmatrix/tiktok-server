@@ -149,8 +149,23 @@ impl JobScheduActor {
                             {
                                 continue;
                             }
+                            let uesrname = account.clone().username;
+                            if uesrname.is_none() {
+                                log::warn!("account.username is none");
+                                continue;
+                            }
+                            let username = uesrname.unwrap();
+                            if username.is_empty() {
+                                log::warn!("account.username is empty");
+                                continue;
+                            }
+                            //check username is email
+                            if username.contains("@") {
+                                log::warn!("account.username is a email");
+                                continue;
+                            }
                             let result = publish_job_dao::count_job_by_account_today(
-                                account_clone.email,
+                                username.clone(),
                                 start_time.clone(),
                             );
                             if let Ok(count) = result {
@@ -178,7 +193,6 @@ impl JobScheduActor {
                                     }
 
                                     //create publish_job
-                                    let account_clone = account.clone();
                                     let group_clone = group.clone();
                                     //random get a title
                                     let title = group_clone.title.unwrap_or("".to_string());
@@ -196,7 +210,7 @@ impl JobScheduActor {
                                     let job_data = PublishJobData {
                                         id: None,
                                         material: Some(material),
-                                        account: Some(account_clone.email),
+                                        account: Some(username.clone()),
                                         title: Some(title.to_string()),
                                         status: Some(0),
                                         start_time: Some(start_time),
