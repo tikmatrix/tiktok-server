@@ -170,3 +170,10 @@ pub fn list_online_agent() -> Result<Vec<Node>, RunTimeError> {
     }
     Ok(nodes)
 }
+pub fn count_online_device() -> Result<i32, RunTimeError> {
+    let conn = database::get_conn()?;
+    let mut stmt = conn.prepare("SELECT count(*) FROM device WHERE online = 1")?;
+    let mut rows = stmt.query(rusqlite::params![])?;
+    let count = rows.next()?.unwrap().get(0)?;
+    Ok(count)
+}

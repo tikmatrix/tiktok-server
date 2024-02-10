@@ -257,3 +257,13 @@ pub struct AvatarFormData {
     #[multipart(limit = "512 MiB")]
     pub files: Vec<TempFile>,
 }
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CountGroupByStatus {
+    pub status: i32,
+    pub count: i32,
+}
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CommonResponse<T> {
+    pub code: i32,
+    pub data: T,
+}

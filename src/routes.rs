@@ -1,8 +1,8 @@
 use crate::ddl_actor::DdlMessage;
 use crate::models::{
-    AccountData, AvatarData, AvatarFormData, DeviceData, DialogWatcherData, GroupData,
-    MaterialData, MaterialFormData, MaterialUesData, MusicData, PublishJobData, ResponseData,
-    ScriptQueryParams, TrainJobData,
+    AccountData, AvatarData, AvatarFormData, CommonResponse, DeviceData, DialogWatcherData,
+    GroupData, MaterialData, MaterialFormData, MaterialUesData, MusicData, PublishJobData,
+    ResponseData, ScriptQueryParams, TrainJobData,
 };
 use crate::models::{InstallFormData, ShellData};
 use crate::{
@@ -1084,4 +1084,54 @@ pub(crate) async fn delete_avatar_api(
 pub(crate) async fn get_avatar_random_api() -> actix_web::Result<impl Responder> {
     let avatar_response_data = web::block(move || avatar_dao::random_one()).await??;
     Ok(web::Json(avatar_response_data))
+}
+#[get("/api/train_job/count_by_status")]
+pub(crate) async fn count_train_job_by_status_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || train_job_dao::count_by_status()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}
+#[get("/api/publish_job/count_by_status")]
+pub(crate) async fn count_publish_job_by_status_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || publish_job_dao::count_by_status()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}
+#[get("/api/device/count_online")]
+pub(crate) async fn count_online_device_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || device_dao::count_online_device()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}
+#[get("/api/account/count_all")]
+pub(crate) async fn count_all_account_api() -> actix_web::Result<impl Responder> {
+    let account_response_data = web::block(move || account_dao::count_all()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: account_response_data,
+    }))
+}
+#[get("/api/account/count_account_by_group_id")]
+pub(crate) async fn count_account_by_group_id_api(
+    web::Query(query): web::Query<HashMap<String, String>>,
+) -> actix_web::Result<impl Responder> {
+    let group_id = query
+        .get("group_id")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing group_id query parameter"))?;
+    //convert group_id i32
+    let group_id = group_id
+        .parse::<i32>()
+        .map_err(|_| actix_web::error::ErrorBadRequest("Invalid group_id query parameter"))?;
+    let account_response_data =
+        web::block(move || account_dao::count_account_by_group_id(group_id)).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: account_response_data,
+    }))
 }

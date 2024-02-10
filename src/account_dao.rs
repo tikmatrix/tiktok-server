@@ -251,3 +251,15 @@ pub fn update_username(
     )?;
     Ok(())
 }
+pub fn count_all() -> Result<i32, RunTimeError> {
+    let conn = database::get_conn()?;
+    let mut stmt = conn.prepare("SELECT count(*) FROM account")?;
+    let count = stmt.query_row([], |row| row.get(0))?;
+    Ok(count)
+}
+pub fn count_account_by_group_id(group_id: i32) -> Result<i32, RunTimeError> {
+    let conn = database::get_conn()?;
+    let mut stmt = conn.prepare("SELECT count(*) FROM account WHERE group_id = ?1")?;
+    let count = stmt.query_row([group_id], |row| row.get(0))?;
+    Ok(count)
+}

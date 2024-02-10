@@ -1,6 +1,8 @@
 use std::sync::Mutex;
 
-use crate::models::{PublishJobData, PublishJobDetails, PublishJobResponseData};
+use crate::models::{
+    CountGroupByStatus, PublishJobData, PublishJobDetails, PublishJobResponseData,
+};
 use crate::{database, runtime_err::RunTimeError};
 use rusqlite::{Connection, Result};
 
@@ -138,6 +140,30 @@ pub fn count_job_by_account_today(
     )?;
     for publish_job in job_iter {
         count = publish_job?;
+    }
+    Ok(count)
+}
+pub fn count_by_status() -> Result<CountGroupByStatus, RunTimeError> {
+    let conn = database::get_conn()?;
+    let mut stmt = conn.prepare(
+        "
+    SELECT status,count(*) FROM publish_job
+    WHERE DATE(create_time) = DATE('now')
+    GROUP BY status
+    ",
+    )?;
+    let mut count = CountGroupByStatus {
+        status: 0,
+        count: 0,
+    };
+    let job_iter = stmt.query_map((), |row| {
+        Ok(CountGroupByStatus {
+            status: row.get(0)?,
+            count: row.get(1)?,
+        })
+    })?;
+    for job in job_iter {
+        count = job?;
     }
     Ok(count)
 }
