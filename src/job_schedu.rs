@@ -134,7 +134,6 @@ impl JobScheduActor {
                     for account in account_data.data {
                         let start_times = group.publish_start_time.split(",");
                         for start_time in start_times {
-                            let account_clone = account.clone();
                             let group_clone = group.clone();
                             let today = chrono::Local::now()
                                 .naive_local()
