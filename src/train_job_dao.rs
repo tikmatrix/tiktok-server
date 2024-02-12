@@ -137,19 +137,15 @@ pub fn count_job_by_account_today(
     Ok(count)
 }
 
-pub fn count_by_status() -> Result<CountGroupByStatus, RunTimeError> {
+pub fn count_by_status() -> Result<Vec<CountGroupByStatus>, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare(
         "
     SELECT status,count(*) FROM train_job
-    WHERE DATE(create_time) = DATE('now')
     GROUP BY status
     ",
     )?;
-    let mut count = CountGroupByStatus {
-        status: 0,
-        count: 0,
-    };
+    let mut data = Vec::new();
     let job_iter = stmt.query_map((), |row| {
         Ok(CountGroupByStatus {
             status: row.get(0)?,
@@ -157,7 +153,7 @@ pub fn count_by_status() -> Result<CountGroupByStatus, RunTimeError> {
         })
     })?;
     for job in job_iter {
-        count = job?;
+        data.push(job?);
     }
-    Ok(count)
+    Ok(data)
 }
