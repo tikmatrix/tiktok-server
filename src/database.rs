@@ -133,7 +133,7 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             group_id INTEGER  DEFAULT 0,
             material TEXT NOT NULL,
-            account TEXT NOT NULL,
+            account_id INTEGER NOT NULL DEFAULT 0,
             title TEXT DEFAULT NULL,
             status INTEGER NOT NULL DEFAULT 0,
             start_time TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -144,11 +144,19 @@ pub fn create_databases() -> Result<(), RunTimeError> {
           );",
         (),
     )?;
+    add_column(
+        "publish_job",
+        "account_id",
+        "ALTER TABLE publish_job ADD COLUMN `account_id` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    //update publish_job set account = (select id from account where email = publish_job.account) where account like '%.com';
+    //update publish_job set account = (select id from account where username = publish_job.account) where account like '@%';
+    //update publish_job set account_id=account;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS train_job (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             group_id INTEGER  DEFAULT 0,
-            account TEXT NOT NULL,
+            account_id INTEGER NOT NULL DEFAULT 0,
             click INTEGER  DEFAULT 0,
             follow INTEGER  DEFAULT 0,
             favorites INTEGER  DEFAULT 0,
@@ -159,6 +167,14 @@ pub fn create_databases() -> Result<(), RunTimeError> {
           );",
         (),
     )?;
+    add_column(
+        "train_job",
+        "account_id",
+        "ALTER TABLE train_job ADD COLUMN `account_id` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    //update train_job set account = (select id from account where email = train_job.account) where account like '%.com';
+    //update train_job set account = (select id from account where username = train_job.account) where account like '@%';
+    //update train_job set account_id=account;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS dialog_watcher (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -8,10 +8,10 @@ pub fn save(conn: &Mutex<Connection>, job_data: TrainJobData) -> Result<(), RunT
     let _lock = conn.lock();
     let conn = database::get_conn()?;
     conn.execute(
-        "INSERT INTO train_job (group_id, account, click, follow, favorites, status,start_time) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO train_job (group_id, account_id, click, follow, favorites, status,start_time) VALUES (?, ?, ?, ?, ?, ?, ?)",
         rusqlite::params![
             job_data.group_id,
-            job_data.account,
+            job_data.account_id,
             job_data.click,
             job_data.follow,
             job_data.favorites,
@@ -44,10 +44,10 @@ pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare(
         "
-    SELECT train_job.id,train_job.group_id,train_job.account,
+    SELECT train_job.id,train_job.group_id,train_job.account_id,
     train_job.click,train_job.follow,train_job.favorites,train_job.status,
     train_job.start_time,train_job.end_time,account.device,account.username FROM train_job
-    left join account on train_job.account = account.email
+    left join account on train_job.account_id = account.id
     ORDER BY train_job.id DESC LIMIT 200
     ",
     )?;
@@ -56,7 +56,7 @@ pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
         Ok(TrainJobDetails {
             id: row.get(0)?,
             group_id: row.get(1)?,
-            account: row.get(2)?,
+            account_id: row.get(2)?,
             click: row.get(3)?,
             follow: row.get(4)?,
             favorites: row.get(5)?,
@@ -81,10 +81,10 @@ pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeErr
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare(
         "
-    SELECT train_job.id,train_job.group_id,train_job.account,
+    SELECT train_job.id,train_job.group_id,train_job.account_id,
     train_job.click,train_job.follow,train_job.favorites,train_job.status,
     train_job.start_time,train_job.end_time,account.device,account.username FROM train_job
-    left join account on train_job.account = account.email
+    left join account on train_job.account_id = account.id
     left join device on account.device = device.serial
     WHERE train_job.status = 0 AND device.agent_ip = ?1 
     AND train_job.start_time < datetime('now', 'localtime') 
@@ -97,7 +97,7 @@ pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeErr
         Ok(TrainJobDetails {
             id: row.get(0)?,
             group_id: row.get(1)?,
-            account: row.get(2)?,
+            account_id: row.get(2)?,
             click: row.get(3)?,
             follow: row.get(4)?,
             favorites: row.get(5)?,
@@ -115,22 +115,20 @@ pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeErr
 }
 
 pub fn count_job_by_account_today(
-    account: String,
+    account_id: i32,
     start_time: String,
 ) -> Result<i32, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare(
         "
     SELECT count(*) FROM train_job
-    left join account on train_job.account = account.username
-    WHERE account.username = ?1 AND train_job.start_time = ?2 AND DATE(create_time) = DATE('now')
+    WHERE account_id = ?1 AND start_time = ?2 AND DATE(create_time) = DATE('now')
     ",
     )?;
     let mut count = 0;
-    let job_iter = stmt.query_map(
-        rusqlite::params![account, start_time],
-        |row| Ok(row.get(0)?),
-    )?;
+    let job_iter = stmt.query_map(rusqlite::params![account_id, start_time], |row| {
+        Ok(row.get(0)?)
+    })?;
     for job in job_iter {
         count = job?;
     }

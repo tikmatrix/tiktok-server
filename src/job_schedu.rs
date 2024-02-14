@@ -64,6 +64,7 @@ impl JobScheduActor {
                             let account = account.clone();
                             let uesrname = account.username;
                             let email = account.email;
+                            let id = account.id;
                             if uesrname.is_none() {
                                 log::warn!("account.username is none");
                                 continue;
@@ -80,18 +81,17 @@ impl JobScheduActor {
                             }
                             let result: Result<i32, crate::runtime_err::RunTimeError> =
                                 train_job_dao::count_job_by_account_today(
-                                    username.clone(),
+                                    id.clone(),
                                     start_time.to_owned(),
                                 );
                             if let Ok(count) = result {
                                 if count == 0 {
                                     //create train_job
-                                    let username = username.clone();
                                     let group_clone = group.clone();
                                     let job_data = TrainJobData {
                                         id: None,
                                         group_id: Some(group_clone.id),
-                                        account: Some(username),
+                                        account_id: Some(id.clone()),
                                         click: Some(1),
                                         follow: Some(1),
                                         favorites: Some(1),
@@ -107,9 +107,8 @@ impl JobScheduActor {
                                             err
                                         );
                                         break;
-                                    } else {
-                                        log::info!("train_job_dao::save success -> {:?}", job_data);
                                     }
+                                    log::info!("train_job_dao::save success -> {:?}", job_data);
                                 }
                             }
                         }
@@ -153,6 +152,7 @@ impl JobScheduActor {
                             let account = account.clone();
                             let uesrname = account.username;
                             let email = account.email;
+                            let id = account.id;
                             if uesrname.is_none() {
                                 log::warn!("account.username is none");
                                 continue;
@@ -168,7 +168,7 @@ impl JobScheduActor {
                                 continue;
                             }
                             let result = publish_job_dao::count_job_by_account_today(
-                                username.clone(),
+                                id.clone(),
                                 start_time.clone(),
                             );
                             if let Ok(count) = result {
@@ -213,7 +213,7 @@ impl JobScheduActor {
                                     let job_data = PublishJobData {
                                         id: None,
                                         material: Some(material),
-                                        account: Some(username.clone()),
+                                        account_id: Some(id.clone()),
                                         title: Some(title.to_string()),
                                         status: Some(0),
                                         start_time: Some(start_time),

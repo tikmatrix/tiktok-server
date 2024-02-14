@@ -77,7 +77,7 @@ pub struct MaterialResponseData {
 pub struct PublishJobData {
     pub id: Option<i32>,
     pub material: Option<String>,
-    pub account: Option<String>,
+    pub account_id: Option<i32>,
     pub title: Option<String>,
     pub status: Option<i32>,
     pub start_time: Option<String>,
@@ -89,7 +89,7 @@ pub struct PublishJobData {
 pub struct PublishJobDetails {
     pub id: i32,
     pub material: String,
-    pub account: String,
+    pub account_id: i32,
     pub title: Option<String>,
     pub status: i32,
     pub start_time: String,
@@ -112,7 +112,7 @@ pub struct TrainJobData {
     pub click: Option<i32>,
     pub follow: Option<i32>,
     pub favorites: Option<i32>,
-    pub account: Option<String>,
+    pub account_id: Option<i32>,
     pub status: Option<i32>,
     pub start_time: Option<String>,
 }
@@ -123,7 +123,7 @@ pub struct TrainJobDetails {
     pub click: i32,
     pub follow: i32,
     pub favorites: i32,
-    pub account: String,
+    pub account_id: i32,
     pub status: i32,
     pub start_time: String,
     pub end_time: String,
