@@ -146,6 +146,8 @@ async fn main() -> io::Result<()> {
             .service(routes::count_online_device_api)
             .service(routes::count_publish_job_by_status_api)
             .service(routes::count_train_job_by_status_api)
+            .service(routes::retry_all_train_job_api)
+            .service(routes::retry_all_publish_job_api)
             .service(fs::Files::new("/avatar", "./upload/avatar/").index_file("index.html"))
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))

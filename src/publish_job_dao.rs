@@ -163,3 +163,11 @@ pub fn count_by_status() -> Result<Vec<CountGroupByStatus>, RunTimeError> {
     }
     Ok(data)
 }
+pub fn retry_all_failed() -> Result<(), RunTimeError> {
+    let conn = database::get_conn()?;
+    conn.execute(
+        "UPDATE publish_job SET status = 0 WHERE status = 3",
+        rusqlite::params![],
+    )?;
+    Ok(())
+}

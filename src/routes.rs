@@ -1135,3 +1135,19 @@ pub(crate) async fn count_account_by_group_id_api(
         data: account_response_data,
     }))
 }
+#[get("/api/train_job/retry_all")]
+pub(crate) async fn retry_all_train_job_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || train_job_dao::retry_all_failed()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}
+#[get("/api/publish_job/retry_all")]
+pub(crate) async fn retry_all_publish_job_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || publish_job_dao::retry_all_failed()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}
