@@ -17,7 +17,7 @@ pub fn get_conn() -> Result<Connection, RunTimeError> {
 pub fn add_column(table: &str, column_name: &str, ddl: &str) -> Result<(), RunTimeError> {
     let conn = get_conn()?;
     // Check if the new column exists
-    let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", table))?;
+    let mut stmt = conn.prepare(&format!("PRAGMA table_info(`{}`)", table))?;
     let rows = stmt.query_map([], |row| Ok(row.get::<_, String>(1)?))?;
 
     let mut column_exists = false;
