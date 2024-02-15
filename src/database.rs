@@ -46,11 +46,32 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             auto_publish INTEGER NOT NULL DEFAULT 1,
             publish_start_time TEXT DEFAULT '02:10',
             auto_train INTEGER NOT NULL DEFAULT 1,
+            floow_probable INTEGER NOT NULL DEFAULT 0,
+            like_probable INTEGER NOT NULL DEFAULT 0,
+            collect_probable INTEGER NOT NULL DEFAULT 0,
             publish_type INTEGER NOT NULL DEFAULT 1,
             product_link TEXT DEFAULT NULL,
             train_start_time TEXT DEFAULT '20:10,20:30,21:10,21:30'
           );",
         (),
+    )?;
+    //add floow_probable
+    add_column(
+        "group",
+        "floow_probable",
+        "ALTER TABLE `group` ADD COLUMN `floow_probable` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    //add like_probable
+    add_column(
+        "group",
+        "like_probable",
+        "ALTER TABLE `group` ADD COLUMN `like_probable` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    //add collect_probable
+    add_column(
+        "group",
+        "collect_probable",
+        "ALTER TABLE `group` ADD COLUMN `collect_probable` INTEGER NOT NULL DEFAULT 0",
     )?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS device (
@@ -157,9 +178,9 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             group_id INTEGER  DEFAULT 0,
             account_id INTEGER NOT NULL DEFAULT 0,
-            click INTEGER  DEFAULT 0,
-            follow INTEGER  DEFAULT 0,
-            favorites INTEGER  DEFAULT 0,
+            floow_probable INTEGER NOT NULL DEFAULT 0,
+            like_probable INTEGER NOT NULL DEFAULT 0,
+            collect_probable INTEGER NOT NULL DEFAULT 0,
             status INTEGER NOT NULL DEFAULT 0,
             start_time TEXT DEFAULT CURRENT_TIMESTAMP,
             end_time TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -171,6 +192,22 @@ pub fn create_databases() -> Result<(), RunTimeError> {
         "train_job",
         "account_id",
         "ALTER TABLE train_job ADD COLUMN `account_id` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    //add floow_probable,like_probable,collect_probable
+    add_column(
+        "train_job",
+        "floow_probable",
+        "ALTER TABLE train_job ADD COLUMN `floow_probable` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    add_column(
+        "train_job",
+        "like_probable",
+        "ALTER TABLE train_job ADD COLUMN `like_probable` INTEGER NOT NULL DEFAULT 0",
+    )?;
+    add_column(
+        "train_job",
+        "collect_probable",
+        "ALTER TABLE train_job ADD COLUMN `collect_probable` INTEGER NOT NULL DEFAULT 0",
     )?;
     //update train_job set account = (select id from account where email = train_job.account) where account like '%.com';
     //update train_job set account = (select id from account where username = train_job.account) where account like '@%';

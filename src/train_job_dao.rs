@@ -8,13 +8,13 @@ pub fn save(conn: &Mutex<Connection>, job_data: TrainJobData) -> Result<(), RunT
     let _lock = conn.lock();
     let conn = database::get_conn()?;
     conn.execute(
-        "INSERT INTO train_job (group_id, account_id, click, follow, favorites, status,start_time) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO train_job (group_id, account_id, like_probable, floow_probable, collect_probable, status,start_time) VALUES (?, ?, ?, ?, ?, ?, ?)",
         rusqlite::params![
             job_data.group_id,
             job_data.account_id,
-            job_data.click,
-            job_data.follow,
-            job_data.favorites,
+            job_data.like_probable,
+            job_data.floow_probable,
+            job_data.collect_probable,
             job_data.status,
             job_data.start_time,
         ],
@@ -45,7 +45,7 @@ pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
     let mut stmt = conn.prepare(
         "
     SELECT train_job.id,train_job.group_id,train_job.account_id,
-    train_job.click,train_job.follow,train_job.favorites,train_job.status,
+    train_job.like_probable,train_job.floow_probable,train_job.collect_probable,train_job.status,
     train_job.start_time,train_job.end_time,account.device,account.username FROM train_job
     left join account on train_job.account_id = account.id
     ORDER BY train_job.id DESC LIMIT 200
@@ -57,9 +57,9 @@ pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
             id: row.get(0)?,
             group_id: row.get(1)?,
             account_id: row.get(2)?,
-            click: row.get(3)?,
-            follow: row.get(4)?,
-            favorites: row.get(5)?,
+            like_probable: row.get(3)?,
+            floow_probable: row.get(4)?,
+            collect_probable: row.get(5)?,
             status: row.get(6)?,
             start_time: row.get(7)?,
             end_time: row.get(8)?,
@@ -82,7 +82,7 @@ pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeErr
     let mut stmt = conn.prepare(
         "
     SELECT train_job.id,train_job.group_id,train_job.account_id,
-    train_job.click,train_job.follow,train_job.favorites,train_job.status,
+    train_job.like_probable,train_job.floow_probable,train_job.collect_probable,train_job.status,
     train_job.start_time,train_job.end_time,account.device,account.username FROM train_job
     left join account on train_job.account_id = account.id
     left join device on account.device = device.serial
@@ -98,9 +98,9 @@ pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeErr
             id: row.get(0)?,
             group_id: row.get(1)?,
             account_id: row.get(2)?,
-            click: row.get(3)?,
-            follow: row.get(4)?,
-            favorites: row.get(5)?,
+            like_probable: row.get(3)?,
+            floow_probable: row.get(4)?,
+            collect_probable: row.get(5)?,
             status: row.get(6)?,
             start_time: row.get(7)?,
             end_time: row.get(8)?,

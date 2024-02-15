@@ -92,9 +92,9 @@ impl JobScheduActor {
                                         id: None,
                                         group_id: Some(group_clone.id),
                                         account_id: Some(id.clone()),
-                                        click: Some(1),
-                                        follow: Some(1),
-                                        favorites: Some(1),
+                                        floow_probable: Some(group_clone.floow_probable),
+                                        like_probable: Some(group_clone.like_probable),
+                                        collect_probable: Some(group_clone.collect_probable),
                                         status: Some(0),
                                         start_time: Some(start_time.to_owned()),
                                     };

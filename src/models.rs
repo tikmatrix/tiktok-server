@@ -109,9 +109,9 @@ pub struct PublishJobResponseData {
 pub struct TrainJobData {
     pub id: Option<i32>,
     pub group_id: Option<i32>,
-    pub click: Option<i32>,
-    pub follow: Option<i32>,
-    pub favorites: Option<i32>,
+    pub floow_probable: Option<i32>,
+    pub like_probable: Option<i32>,
+    pub collect_probable: Option<i32>,
     pub account_id: Option<i32>,
     pub status: Option<i32>,
     pub start_time: Option<String>,
@@ -120,9 +120,9 @@ pub struct TrainJobData {
 pub struct TrainJobDetails {
     pub id: i32,
     pub group_id: i32,
-    pub click: i32,
-    pub follow: i32,
-    pub favorites: i32,
+    pub floow_probable: i32,
+    pub like_probable: i32,
+    pub collect_probable: i32,
     pub account_id: i32,
     pub status: i32,
     pub start_time: String,
@@ -185,6 +185,9 @@ pub struct GroupData {
     pub title: Option<String>,
     pub publish_type: i32,
     pub product_link: Option<String>,
+    pub floow_probable: i32,
+    pub like_probable: i32,
+    pub collect_probable: i32,
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GroupDetails {
@@ -197,6 +200,9 @@ pub struct GroupDetails {
     pub title: Option<String>,
     pub publish_type: i32,
     pub product_link: Option<String>,
+    pub floow_probable: i32,
+    pub like_probable: i32,
+    pub collect_probable: i32,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GroupResponseData {
