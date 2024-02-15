@@ -12,7 +12,30 @@ pub fn get_conn() -> Result<Connection, RunTimeError> {
     conn.execute("PRAGMA synchronous=NORMAL;", [])?; // Enable concurrent write
     conn.execute("PRAGMA temp_store=MEMORY;", [])?; // Use memory to store temporary data
     conn.execute("PRAGMA page_size=32768;", [])?; // Set page size to 32KB
-    return Ok(conn);
+    Ok(conn)
+}
+pub fn del_column(table: &str, column_name: &str) -> Result<(), RunTimeError> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare(&format!("PRAGMA table_info(`{}`)", table))?;
+    let rows = stmt.query_map([], |row| Ok(row.get::<_, String>(1)?))?;
+
+    let mut column_exists = false;
+    for row in rows {
+        if let Ok(name) = row {
+            if name == column_name {
+                column_exists = true;
+                break;
+            }
+        }
+    }
+    if column_exists {
+        conn.execute(
+            &format!("ALTER TABLE `{}` DROP COLUMN `{}`", table, column_name),
+            [],
+        )?;
+    }
+
+    Ok(())
 }
 pub fn add_column(table: &str, column_name: &str, ddl: &str) -> Result<(), RunTimeError> {
     let conn = get_conn()?;
@@ -165,6 +188,8 @@ pub fn create_databases() -> Result<(), RunTimeError> {
           );",
         (),
     )?;
+    //delete account
+    del_column("publish_job", "account")?;
     add_column(
         "publish_job",
         "account_id",
@@ -188,6 +213,8 @@ pub fn create_databases() -> Result<(), RunTimeError> {
           );",
         (),
     )?;
+    //delete account
+    del_column("train_job", "account")?;
     add_column(
         "train_job",
         "account_id",
