@@ -1,3 +1,4 @@
+use crate::comment_dao::{self, PostCommentData, PostCommentTopicData};
 use crate::ddl_actor::DdlMessage;
 use crate::models::{
     AccountData, AvatarData, AvatarFormData, CommonResponse, DeviceData, DialogWatcherData,
@@ -1150,4 +1151,27 @@ pub(crate) async fn retry_all_publish_job_api() -> actix_web::Result<impl Respon
         code: 0,
         data: device_response_data,
     }))
+}
+#[post("/api/post_comment")]
+pub(crate) async fn add_post_comment_api(
+    conn: web::Data<Mutex<Connection>>,
+    web::Json(post_comment_data): web::Json<PostCommentData>,
+) -> actix_web::Result<impl Responder> {
+    web::block(move || comment_dao::save_post_comment(&conn, post_comment_data)).await??;
+    Ok(HttpResponse::NoContent())
+}
+#[get("/api/post_comment")]
+pub(crate) async fn get_post_comment_api() -> actix_web::Result<impl Responder> {
+    let post_comment_response_data =
+        web::block(move || comment_dao::list_all_post_comments()).await??;
+    Ok(web::Json(post_comment_response_data))
+}
+#[post("/api/post_comment_topic")]
+pub(crate) async fn add_post_comment_topic_api(
+    conn: web::Data<Mutex<Connection>>,
+    web::Json(post_comment_topic_data): web::Json<PostCommentTopicData>,
+) -> actix_web::Result<impl Responder> {
+    web::block(move || comment_dao::save_post_comment_topic(&conn, post_comment_topic_data))
+        .await??;
+    Ok(HttpResponse::NoContent())
 }

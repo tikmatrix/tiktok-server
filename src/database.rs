@@ -259,5 +259,39 @@ pub fn create_databases() -> Result<(), RunTimeError> {
       );",
         (),
     )?;
+    //post_comment
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS post_comment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_url INTEGER  DEFAULT 0,
+        create_time TEXT DEFAULT CURRENT_TIMESTAMP
+      );",
+        (),
+    )?;
+    //post_comment_topic
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS post_comment_topic (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_comment_id INTEGER  DEFAULT 0,
+        content TEXT NOT NULL,
+        account_count INTEGER NOT NULL DEFAULT 0,
+        create_time TEXT DEFAULT CURRENT_TIMESTAMP
+      );",
+        (),
+    )?;
+    //post_comment_topic_comment
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS post_comment_topic_comment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_comment_id INTEGER  DEFAULT 0,
+        post_comment_topic_id INTEGER  DEFAULT 0,
+        account_id INTEGER NOT NULL DEFAULT 0,
+        content TEXT NOT NULL,
+        no INTEGER NOT NULL DEFAULT 0,
+        parent_no INTEGER NOT NULL DEFAULT 0,
+        create_time TEXT DEFAULT CURRENT_TIMESTAMP
+      );",
+        (),
+    )?;
     Ok(())
 }

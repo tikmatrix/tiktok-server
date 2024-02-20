@@ -19,6 +19,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 mod account_dao;
 mod avatar_dao;
+mod comment_dao;
 mod database;
 mod ddl_actor;
 mod device_dao;
@@ -74,7 +75,6 @@ async fn main() -> io::Result<()> {
         // 将消息发送给 Actor
         ddl_actor_addr.do_send(msg);
     });
-
     log::info!("starting HTTP server at port 8090 with 2 workers");
     HttpServer::new(move || {
         let cors = Cors::permissive();
@@ -149,12 +149,15 @@ async fn main() -> io::Result<()> {
             .service(routes::retry_all_train_job_api)
             .service(routes::retry_all_publish_job_api)
             .service(routes::count_account_by_group_id_api)
+            .service(routes::add_post_comment_api)
+            .service(routes::add_post_comment_topic_api)
+            .service(routes::get_post_comment_api)
             .service(fs::Files::new("/avatar", "./upload/avatar/").index_file("index.html"))
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))
             .service(fs::Files::new("/", "./bin/dist/").index_file("index.html"))
     })
-    .bind(("0.0.0.0", 8090))?
+    .bind(("0.0.0.0", 18090))?
     .workers(2)
     .run()
     .await
