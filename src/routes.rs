@@ -1175,3 +1175,14 @@ pub(crate) async fn add_post_comment_topic_api(
         .await??;
     Ok(HttpResponse::NoContent())
 }
+#[put("/api/post_comment_topic_comment_status")]
+pub(crate) async fn update_post_comment_topic_comment_status_api(
+    conn: web::Data<Mutex<Connection>>,
+    web::Json(post_comment_topic_data): web::Json<comment_dao::UpdateCommentJobStatusData>,
+) -> actix_web::Result<impl Responder> {
+    web::block(move || {
+        comment_dao::update_post_comment_topic_comment_status(&conn, post_comment_topic_data)
+    })
+    .await??;
+    Ok(HttpResponse::NoContent())
+}

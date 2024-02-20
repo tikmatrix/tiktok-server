@@ -109,3 +109,21 @@ pub fn save_post_comment_topic(
 
     Ok(())
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateCommentJobStatusData {
+    pub id: i32,
+    pub status: i32,
+}
+
+pub fn update_post_comment_topic_comment_status(
+    conn: &Mutex<Connection>,
+    data: UpdateCommentJobStatusData,
+) -> Result<(), RunTimeError> {
+    let _lock = conn.lock();
+    let conn = database::get_conn()?;
+    conn.execute(
+        "UPDATE post_comment_topic_comment SET status = ?1 WHERE id = ?2",
+        rusqlite::params![data.status, data.id],
+    )?;
+    Ok(())
+}
