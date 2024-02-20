@@ -70,8 +70,6 @@ pub struct PostCommentTopicData {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostCommentTopicCommentData {
-    pub post_comment_id: i32,
-    pub post_comment_topic_id: i32,
     pub account_id: i32,
     pub content: String,
     pub status: i32,
@@ -98,7 +96,7 @@ pub fn save_post_comment_topic(
         conn.execute(
             "INSERT INTO post_comment_topic_comment (post_comment_id,post_comment_topic_id,account_id,content,status,no,parent_no) VALUES (?1,?2,?3,?4,?5,?6,?7)",
             rusqlite::params![
-                comment.post_comment_id,
+                post_comment_topic.post_comment_id,
                 post_comment_topic_id,
                 comment.account_id,
                 comment.content,

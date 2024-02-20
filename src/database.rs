@@ -289,9 +289,11 @@ pub fn create_databases() -> Result<(), RunTimeError> {
         content TEXT NOT NULL,
         no INTEGER NOT NULL DEFAULT 0,
         parent_no INTEGER NOT NULL DEFAULT 0,
+        status INTEGER NOT NULL DEFAULT 0,
         create_time TEXT DEFAULT CURRENT_TIMESTAMP
       );",
         (),
     )?;
+
     Ok(())
 }
