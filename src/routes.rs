@@ -1186,3 +1186,15 @@ pub(crate) async fn update_post_comment_topic_comment_status_api(
     .await??;
     Ok(HttpResponse::NoContent())
 }
+#[get("/api/runable_comment_job")]
+pub(crate) async fn get_runable_comment_job_api(
+    web::Query(query): web::Query<HashMap<String, String>>,
+) -> actix_web::Result<impl Responder> {
+    let agent_ip = query
+        .get("agent_ip")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing agent_ip query parameter"))?
+        .clone();
+    let job_response_data =
+        web::block(move || comment_dao::list_runable_comment_jobs(&agent_ip)).await??;
+    Ok(web::Json(job_response_data))
+}

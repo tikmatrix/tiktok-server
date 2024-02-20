@@ -127,3 +127,42 @@ pub fn update_post_comment_topic_comment_status(
     )?;
     Ok(())
 }
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CommentJobDetails {
+    pub id: i32,
+    pub post_url: String,
+    pub content: String,
+    pub reply_content: String,
+    pub username: String,
+    pub device: Option<String>,
+}
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CommentJobResponseData {
+    pub data: Vec<CommentJobDetails>,
+}
+pub fn list_runable_comment_jobs(agent_ip: &str) -> Result<CommentJobResponseData, RunTimeError> {
+    let conn = database::get_conn()?;
+    let mut stmt = conn.prepare(
+        "SELECT a.id as id,e.post_url as post_url, a.content as content,b.content as reply_content,a.username as username,c.device as device FROM post_comment_topic_comment as a
+        LEFT JOIN post_comment_topic_comment as b ON a.parent_no = b.no
+        LEFT JOIN account as c ON a.account_id = c.id
+        LEFT JOIN device as d ON c.device = d.serial
+        LEFT JOIN post_comment as e ON a.post_comment_id = e.id
+        WHERE a.status = 0 AND b.status = 2 AND d.agent_ip = ?1
+        ORDER BY a.create_time DESC LIMIT 100",
+    )?;
+    let comment_jobs = stmt
+        .query_map([agent_ip], |row| {
+            Ok(CommentJobDetails {
+                id: row.get(0)?,
+                post_url: row.get(1)?,
+                content: row.get(2)?,
+                reply_content: row.get(3)?,
+                username: row.get(4)?,
+                device: row.get(5)?,
+            })
+        })?
+        .collect::<Result<Vec<CommentJobDetails>, _>>()?;
+
+    Ok(CommentJobResponseData { data: comment_jobs })
+}
