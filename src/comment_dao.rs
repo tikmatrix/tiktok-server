@@ -143,7 +143,7 @@ pub struct CommentJobResponseData {
 pub fn list_runable_comment_jobs(agent_ip: &str) -> Result<CommentJobResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare(
-        "SELECT a.id as id,e.post_url as post_url, a.content as content,b.content as reply_content,a.username as username,c.device as device FROM post_comment_topic_comment as a
+        "SELECT a.id as id,e.post_url as post_url, a.content as content,b.content as reply_content,c.username as username,c.device as device FROM post_comment_topic_comment as a
         LEFT JOIN post_comment_topic_comment as b ON a.parent_no = b.no
         LEFT JOIN account as c ON a.account_id = c.id
         LEFT JOIN device as d ON c.device = d.serial
