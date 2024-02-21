@@ -132,7 +132,7 @@ pub struct CommentJobDetails {
     pub id: i32,
     pub post_url: String,
     pub content: String,
-    pub reply_content: String,
+    pub reply_content: Option<String>,
     pub username: String,
     pub device: Option<String>,
 }
@@ -143,14 +143,20 @@ pub struct CommentJobResponseData {
 pub fn list_runable_comment_jobs(agent_ip: &str) -> Result<CommentJobResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare(
-        "SELECT a.id as id,e.post_url as post_url, a.content as content,b.content as reply_content,c.username as username,c.device as device FROM post_comment_topic_comment as a
+        "
+        SELECT aa.id,aa.post_url,aa.content,aa.reply_content,aa.username,aa.device FROM
+        (SELECT a.id as id,e.post_url as post_url, a.content as content,b.content as reply_content,c.username as username,c.device as device FROM post_comment_topic_comment as a
         LEFT JOIN post_comment_topic_comment as b ON a.parent_no = b.no
         LEFT JOIN account as c ON a.account_id = c.id
-        LEFT JOIN device as d ON c.device = d.serial
         LEFT JOIN post_comment as e ON a.post_comment_id = e.id
-        WHERE a.status = 0 AND b.status = 2 AND d.agent_ip = ?1
-        ORDER BY a.create_time DESC LIMIT 100",
+        WHERE ((a.status = 0 AND a.parent_no=0) OR (a.status=0 AND a.parent_no>0 AND b.status = 2 ))
+        ) as aa
+        LEFT JOIN device as bb ON aa.device = bb.serial
+        WHERE bb.online = 1
+        AND bb.agent_ip = ?1
+        ORDER BY aa.id DESC LIMIT 100",
     )?;
+
     let comment_jobs = stmt
         .query_map([agent_ip], |row| {
             Ok(CommentJobDetails {

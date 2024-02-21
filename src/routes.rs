@@ -1184,7 +1184,9 @@ pub(crate) async fn update_post_comment_topic_comment_status_api(
         comment_dao::update_post_comment_topic_comment_status(&conn, post_comment_topic_data)
     })
     .await??;
-    Ok(HttpResponse::NoContent())
+    Ok(web::Json(ResponseData {
+        data: "ok".to_string(),
+    }))
 }
 #[get("/api/runable_comment_job")]
 pub(crate) async fn get_runable_comment_job_api(
