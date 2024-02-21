@@ -158,7 +158,7 @@ async fn main() -> io::Result<()> {
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))
             .service(fs::Files::new("/", "./bin/dist/").index_file("index.html"))
     })
-    .bind(("0.0.0.0", 18090))?
+    .bind(("0.0.0.0", 8090))?
     .workers(2)
     .run()
     .await
