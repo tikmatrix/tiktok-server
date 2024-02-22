@@ -13,6 +13,8 @@ pub struct PostCommentDetails {
     pub post_url: String,
     pub topic_count: i32,
     pub comment_count: i32,
+    pub success_comment_count: i32,
+    pub fail_comment_count: i32,
     pub account_count: i32,
     pub create_time: String,
 }
@@ -35,15 +37,47 @@ pub fn save_post_comment(
 pub fn list_all_post_comments() -> Result<PostCommentResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare(
-        "SELECT id,post_url,COALESCE(topic_count, 0) as topic_count,COALESCE(account_count, 0) as account_count,COALESCE(comment_count, 0) as comment_count,create_time FROM post_comment
-        LEFT JOIN (SELECT post_comment_id,COUNT(*) as topic_count FROM post_comment_topic GROUP BY post_comment_id) as topic_count
-        ON post_comment.id = topic_count.post_comment_id
-        LEFT JOIN (SELECT post_comment_id,COUNT(DISTINCT account_id) as account_count FROM post_comment_topic_comment GROUP BY post_comment_id) as account_count
-        ON post_comment.id = account_count.post_comment_id
-        LEFT JOIN (SELECT post_comment_id,COUNT(*) as comment_count FROM post_comment_topic_comment GROUP BY post_comment_id) as comment_count
-        ON post_comment.id = comment_count.post_comment_id
-        ORDER BY create_time DESC LIMIT 100
-        ",
+        "
+        SELECT 
+            id,
+            post_url,
+            COALESCE(topic_count, 0) as topic_count,
+            COALESCE(account_count, 0) as account_count,
+            COALESCE(comment_count, 0) as comment_count,
+            COALESCE(success_comment_count, 0) as success_comment_count,
+            COALESCE(fail_comment_count, 0) as fail_comment_count,
+            create_time 
+        FROM post_comment
+        LEFT JOIN (
+            SELECT post_comment_id, COUNT(*) as topic_count 
+            FROM post_comment_topic 
+            GROUP BY post_comment_id
+        ) as topic_count ON post_comment.id = topic_count.post_comment_id
+        LEFT JOIN (
+            SELECT post_comment_id, COUNT(DISTINCT account_id) as account_count 
+            FROM post_comment_topic_comment 
+            GROUP BY post_comment_id
+        ) as account_count ON post_comment.id = account_count.post_comment_id
+        LEFT JOIN (
+            SELECT post_comment_id, COUNT(*) as comment_count 
+            FROM post_comment_topic_comment 
+            GROUP BY post_comment_id
+        ) as comment_count ON post_comment.id = comment_count.post_comment_id
+        LEFT JOIN (
+            SELECT post_comment_id, COUNT(*) as success_comment_count 
+            FROM post_comment_topic_comment 
+            WHERE status = 2
+            GROUP BY post_comment_id
+        ) as success_comment_count ON post_comment.id = success_comment_count.post_comment_id
+        LEFT JOIN (
+            SELECT post_comment_id, COUNT(*) as fail_comment_count 
+            FROM post_comment_topic_comment 
+            WHERE status = 3 
+            GROUP BY post_comment_id
+        ) as fail_comment_count ON post_comment.id = fail_comment_count.post_comment_id
+        ORDER BY create_time DESC 
+        LIMIT 100
+    ",
     )?;
     let post_comments = stmt
         .query_map([], |row| {
@@ -53,7 +87,9 @@ pub fn list_all_post_comments() -> Result<PostCommentResponseData, RunTimeError>
                 topic_count: row.get(2)?,
                 account_count: row.get(3)?,
                 comment_count: row.get(4)?,
-                create_time: row.get(5)?,
+                success_comment_count: row.get(5)?,
+                fail_comment_count: row.get(6)?,
+                create_time: row.get(7)?,
             })
         })?
         .collect::<Result<Vec<PostCommentDetails>, _>>()?;
