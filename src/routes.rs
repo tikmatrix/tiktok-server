@@ -1200,3 +1200,11 @@ pub(crate) async fn get_runable_comment_job_api(
         web::block(move || comment_dao::list_runable_comment_jobs(&agent_ip)).await??;
     Ok(web::Json(job_response_data))
 }
+#[get("/api/comment_job/count_by_status")]
+pub(crate) async fn count_comment_job_by_status_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || comment_dao::count_by_status()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}

@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use crate::{database, runtime_err::RunTimeError};
+use crate::{database, models::CountGroupByStatus, runtime_err::RunTimeError};
 use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -207,4 +207,25 @@ pub fn list_runable_comment_jobs(agent_ip: &str) -> Result<CommentJobResponseDat
         .collect::<Result<Vec<CommentJobDetails>, _>>()?;
 
     Ok(CommentJobResponseData { data: comment_jobs })
+}
+
+pub fn count_by_status() -> Result<Vec<CountGroupByStatus>, RunTimeError> {
+    let conn = database::get_conn()?;
+    let mut stmt = conn.prepare(
+        "
+    SELECT status,count(*) FROM post_comment_topic_comment
+    GROUP BY status
+    ",
+    )?;
+    let mut data = Vec::new();
+    let job_iter = stmt.query_map((), |row| {
+        Ok(CountGroupByStatus {
+            status: row.get(0)?,
+            count: row.get(1)?,
+        })
+    })?;
+    for job in job_iter {
+        data.push(job?);
+    }
+    Ok(data)
 }
