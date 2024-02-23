@@ -1208,3 +1208,29 @@ pub(crate) async fn count_comment_job_by_status_api() -> actix_web::Result<impl 
         data: device_response_data,
     }))
 }
+#[delete("/api/material/delete_all")]
+pub(crate) async fn delete_all_material_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || material_dao::delete_all()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}
+///api/train_job/delete_all
+#[delete("/api/train_job/delete_all")]
+pub(crate) async fn delete_all_train_job_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || train_job_dao::delete_all()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}
+///api/publish_job/delete_all
+#[delete("/api/publish_job/delete_all")]
+pub(crate) async fn delete_all_publish_job_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || publish_job_dao::delete_all()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}

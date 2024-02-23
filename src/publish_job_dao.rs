@@ -169,3 +169,14 @@ pub fn retry_all_failed() -> Result<(), RunTimeError> {
     )?;
     Ok(())
 }
+pub fn delete_all() -> Result<(), RunTimeError> {
+    let conn = database::get_conn()?;
+    //truncate table
+    conn.execute("DELETE FROM publish_job", rusqlite::params![])?;
+    //reset autoincrement
+    conn.execute(
+        "DELETE FROM sqlite_sequence WHERE name='publish_job'",
+        rusqlite::params![],
+    )?;
+    Ok(())
+}

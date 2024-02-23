@@ -117,3 +117,14 @@ pub fn get_and_use_one(
     }
     Err(RunTimeError::NotFound)
 }
+pub fn delete_all() -> Result<(), RunTimeError> {
+    let conn = database::get_conn()?;
+    //truncate table
+    conn.execute("DELETE FROM material", rusqlite::params![])?;
+    //reset autoincrement
+    conn.execute(
+        "DELETE FROM sqlite_sequence WHERE name='material'",
+        rusqlite::params![],
+    )?;
+    Ok(())
+}
