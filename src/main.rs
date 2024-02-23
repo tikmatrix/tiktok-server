@@ -154,6 +154,7 @@ async fn main() -> io::Result<()> {
             .service(routes::get_post_comment_api)
             .service(routes::update_post_comment_topic_comment_status_api)
             .service(routes::get_runable_comment_job_api)
+            .service(routes::count_comment_job_by_status_api)
             .service(fs::Files::new("/avatar", "./upload/avatar/").index_file("index.html"))
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))
