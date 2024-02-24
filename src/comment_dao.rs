@@ -229,3 +229,31 @@ pub fn count_by_status() -> Result<Vec<CountGroupByStatus>, RunTimeError> {
     }
     Ok(data)
 }
+pub fn delete_all() -> Result<(), RunTimeError> {
+    let conn = database::get_conn()?;
+    //truncate table
+    conn.execute("DELETE FROM post_comment", rusqlite::params![])?;
+    //reset autoincrement
+    conn.execute(
+        "DELETE FROM sqlite_sequence WHERE name='post_comment'",
+        rusqlite::params![],
+    )?;
+    //truncate table
+    conn.execute("DELETE FROM post_comment_topic", rusqlite::params![])?;
+    //reset autoincrement
+    conn.execute(
+        "DELETE FROM sqlite_sequence WHERE name='post_comment_topic'",
+        rusqlite::params![],
+    )?;
+    //truncate table
+    conn.execute(
+        "DELETE FROM post_comment_topic_comment",
+        rusqlite::params![],
+    )?;
+    //reset autoincrement
+    conn.execute(
+        "DELETE FROM sqlite_sequence WHERE name='post_comment_topic_comment'",
+        rusqlite::params![],
+    )?;
+    Ok(())
+}

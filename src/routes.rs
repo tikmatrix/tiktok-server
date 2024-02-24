@@ -1234,3 +1234,12 @@ pub(crate) async fn delete_all_publish_job_api() -> actix_web::Result<impl Respo
         data: device_response_data,
     }))
 }
+///api/post_comment/delete_all
+#[delete("/api/post_comment/delete_all")]
+pub(crate) async fn delete_all_post_comment_api() -> actix_web::Result<impl Responder> {
+    let device_response_data = web::block(move || comment_dao::delete_all()).await??;
+    Ok(web::Json(CommonResponse {
+        code: 0,
+        data: device_response_data,
+    }))
+}

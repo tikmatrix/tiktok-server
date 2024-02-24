@@ -158,6 +158,7 @@ async fn main() -> io::Result<()> {
             .service(routes::delete_all_material_api)
             .service(routes::delete_all_publish_job_api)
             .service(routes::delete_all_train_job_api)
+            .service(routes::delete_all_post_comment_api)
             .service(fs::Files::new("/avatar", "./upload/avatar/").index_file("index.html"))
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))
