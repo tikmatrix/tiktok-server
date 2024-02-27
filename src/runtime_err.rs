@@ -8,7 +8,11 @@ pub enum RunTimeError {
     CustomError(String),
     NotFound,
 }
-
+impl RunTimeError {
+    pub(crate) fn new(arg: &str) -> RunTimeError {
+        RunTimeError::CustomError(arg.to_string())
+    }
+}
 impl actix_web::ResponseError for RunTimeError {
     fn status_code(&self) -> StatusCode {
         match self {

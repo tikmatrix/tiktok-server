@@ -30,3 +30,5 @@ unicode-segmentation = "1.10.1"
 rusqlite = { version = "0.30.0", features = ["bundled"] }
 pickledb = "0.5.1"
 machine-uid = "0.5.1"
+serde_yaml = "0.9.32"
+dirs = "5.0.1"
