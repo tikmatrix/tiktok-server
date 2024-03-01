@@ -6,6 +6,7 @@ use crate::models::{
     ResponseData, ScriptQueryParams, TrainJobData,
 };
 use crate::models::{InstallFormData, ShellData};
+use crate::yaml_util::ProfileConfigResponse;
 use crate::{
     account_dao, avatar_dao, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
     publish_job_dao, request_util, train_job_dao, yaml_util,
@@ -1246,5 +1247,7 @@ pub(crate) async fn delete_all_post_comment_api() -> actix_web::Result<impl Resp
 #[get("/api/get_proxys")]
 pub(crate) async fn get_proxys_api() -> actix_web::Result<impl Responder> {
     let proxy_response_data = web::block(move || yaml_util::read_yaml()).await??;
-    Ok(web::Json(proxy_response_data))
+    Ok(web::Json(ProfileConfigResponse {
+        data: proxy_response_data,
+    }))
 }

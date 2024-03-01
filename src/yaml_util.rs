@@ -13,6 +13,10 @@ pub struct FileConfig {
     pub selected: Vec<String>,
 }
 #[derive(Debug, Serialize, Deserialize)]
+pub struct ProfileConfigResponse {
+    pub data: ProfileConfig,
+}
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ProfileConfig {
     pub port: i64,
     #[serde(rename = "socks-port")]
@@ -32,6 +36,7 @@ pub struct ProfileConfig {
     pub script: ScriptConfig,
     pub rules: Vec<String>,
 }
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProxyConfig {
     pub name: String,
@@ -144,6 +149,49 @@ pub fn remove_proxys_from_config(proxys: Vec<String>) {
     write_yaml(&config).unwrap();
     reload_clash();
 }
+pub struct Rule {
+    pub name: String,
+    pub src_ip: String,
+    pub dst_ip: String,
+}
+//SCRIPT,13,207.135.194.25
+pub fn add_rules_to_config(rule: Rule) {
+    let mut config = read_yaml().unwrap();
+    let mut is_exist = false;
+    //check if rule already exists
+    for mut shortcut in &config.script.shortcuts {
+        if shortcut.0 == &rule.name {
+            //update
+            shortcut.1 = &format!("src_ip == \"{}\"", rule.src_ip);
+            is_exist = true;
+        }
+    }
+    if !is_exist {
+        config
+            .script
+            .shortcuts
+            .insert(rule.name.clone(), format!("src_ip == \"{}\"", rule.src_ip));
+    }
+    let mut is_exist = false;
+    let mut exist_rule = String::new();
+    for r in &config.rules {
+        if r.starts_with(format!("SCRIPT,{},", rule.name).as_str()) {
+            //update
+            exist_rule = r.clone();
+            is_exist = true;
+        }
+    }
+    if is_exist {
+        println!("exist_rule: {:?}", exist_rule);
+        let index = config.rules.iter().position(|x| x == &exist_rule).unwrap();
+        config.rules.remove(index);
+    }
+    config
+        .rules
+        .insert(0, format!("SCRIPT,{},{}", rule.name, rule.dst_ip));
+    write_yaml(&config).unwrap();
+    reload_clash();
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -164,5 +212,14 @@ mod tests {
     #[test]
     fn test_reload_clash() {
         reload_clash();
+    }
+    #[test]
+    fn test_add_rules_to_config() {
+        let rule = Rule {
+            name: "12".to_string(),
+            src_ip: "192.168.4.111".to_string(),
+            dst_ip: "207.135.204.215".to_string(),
+        };
+        add_rules_to_config(rule);
     }
 }
