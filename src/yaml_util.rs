@@ -112,7 +112,7 @@ pub fn reload_clash() {
     //replace \\ with /
     let path = path.to_str().unwrap().replace("\\", "/");
     let body = format!("{{\"path\":\"{}\"}}", path);
-    println!("reload_clash: {:?}", body);
+    log::info!("reload_clash: {:?}", body);
     let client = reqwest::blocking::Client::new();
     let resp = client
         .put(url)
@@ -121,18 +121,34 @@ pub fn reload_clash() {
         .send()
         .unwrap();
     let body = resp.text().unwrap();
-    println!("reload_clash: {:?}", body);
+    log::info!("reload_clash: {:?}", body);
 }
-pub fn add_proxys_to_config(proxys: Vec<String>) {
+pub fn add_proxys_to_config(proxys: Vec<String>) -> Result<(), RunTimeError> {
     let mut config = read_yaml().unwrap();
     for proxy in proxys {
         let proxy_config = new_proxy_config(&proxy);
         let name = proxy_config.name.clone();
-        config.proxies.push(proxy_config);
-        config.proxy_groups[0].proxies.push(name);
+        if config.proxies.iter().position(|x| x.name == name).is_some() {
+            log::info!("proxy already exists in proxies: {:?}", name);
+        } else {
+            log::info!("add proxy: {:?} to proxies", name);
+            config.proxies.push(proxy_config);
+        }
+        if config.proxy_groups[0]
+            .proxies
+            .iter()
+            .position(|x| x == &name)
+            .is_some()
+        {
+            log::info!("proxy already exists in proxy_groups: {:?}", name);
+        } else {
+            log::info!("add proxy: {:?} to proxy_groups", name);
+            config.proxy_groups[0].proxies.push(name);
+        }
     }
     write_yaml(&config).unwrap();
     reload_clash();
+    Ok(())
 }
 pub fn remove_proxys_from_config(proxys: Vec<String>) {
     let mut config = read_yaml().unwrap();
@@ -182,7 +198,7 @@ pub fn add_rules_to_config(rule: Rule) {
         }
     }
     if is_exist {
-        println!("exist_rule: {:?}", exist_rule);
+        log::info!("exist_rule: {:?}", exist_rule);
         let index = config.rules.iter().position(|x| x == &exist_rule).unwrap();
         config.rules.remove(index);
     }
@@ -192,13 +208,74 @@ pub fn add_rules_to_config(rule: Rule) {
     write_yaml(&config).unwrap();
     reload_clash();
 }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DelayResponseData {
+    pub name: String,
+    pub delay: i64,
+}
+
+pub fn read_proxy_delay(name: &str) -> Result<DelayResponseData, RunTimeError> {
+    let url = format!(
+        "http://127.0.0.1:60979/proxies/{}/delay?timeout=3000&url=https://www.tiktok.com",
+        name
+    );
+    let client = reqwest::blocking::Client::new();
+    let resp = client.get(url).send();
+    if resp.is_err() {
+        log::info!("get proxy delay error: {:?}", resp.err());
+        return Ok(DelayResponseData {
+            name: name.to_string(),
+            delay: -1,
+        });
+    }
+    let resp = resp.unwrap();
+    let body = resp.text();
+    if body.is_err() {
+        log::info!("get proxy delay error: {:?}", body.err());
+        return Ok(DelayResponseData {
+            name: name.to_string(),
+            delay: -1,
+        });
+    }
+    let body = body.unwrap();
+    //parse as json
+    let json: Result<serde_json::Value, serde_json::Error> = serde_json::from_str(&body);
+    if json.is_err() {
+        log::info!("parse proxy delay error: {:?}", json.err());
+        return Ok(DelayResponseData {
+            name: name.to_string(),
+            delay: -1,
+        });
+    }
+    let json = json.unwrap();
+    let delay = json["delay"].as_i64();
+    if delay.is_none() {
+        log::info!("get proxy delay error: {:?}", json);
+        return Ok(DelayResponseData {
+            name: name.to_string(),
+            delay: -1,
+        });
+    }
+    Ok(DelayResponseData {
+        name: name.to_string(),
+        delay: delay.unwrap(),
+    })
+}
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn test_read_yaml() {
         let config = read_yaml().unwrap();
-        println!("{:?}", config);
+        log::info!("{:?}", config);
+    }
+    #[test]
+    fn test_delays() {
+        let config = read_yaml().unwrap();
+        for proxy in config.proxies {
+            let delay = read_proxy_delay(&proxy.name);
+            println!("{:?} delay: {:?}", proxy.name, delay.unwrap());
+        }
     }
     #[test]
     fn test_write_yaml() {

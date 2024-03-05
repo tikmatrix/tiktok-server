@@ -170,8 +170,8 @@ pub struct ScriptQueryParams {
     pub args: Option<String>,
 }
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ResponseData {
-    pub data: String,
+pub struct ResponseData<T> {
+    pub data: T,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
