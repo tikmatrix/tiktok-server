@@ -86,7 +86,7 @@ pub fn new_proxy_config(proxy: &str) -> ProxyConfig {
 }
 pub fn read_yaml() -> Result<ProfileConfig, RunTimeError> {
     let config_path = get_config_path();
-    print!("config_path: {:?}", config_path);
+    log::info!("config_path: {:?}", config_path);
     let contents = std::fs::read_to_string(config_path);
     if contents.is_err() {
         return Err(RunTimeError::new("read config file error"));
@@ -286,7 +286,7 @@ mod tests {
         let config = read_yaml().unwrap();
         for proxy in config.proxies {
             let delay = read_proxy_delay(&proxy.name);
-            println!("{:?} delay: {:?}", proxy.name, delay.unwrap());
+            log::info!("{:?} delay: {:?}", proxy.name, delay.unwrap());
         }
     }
     #[test]
