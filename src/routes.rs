@@ -6,7 +6,7 @@ use crate::models::{
     ResponseData, ScriptQueryParams, TrainJobData,
 };
 use crate::models::{InstallFormData, ShellData};
-use crate::yaml_util::{ProfileConfig, ProfileConfigResponse};
+use crate::yaml_util::{ProfileConfig, ProfileConfigResponse, Rule};
 use crate::{
     account_dao, avatar_dao, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
     publish_job_dao, request_util, train_job_dao, yaml_util,
@@ -1281,4 +1281,29 @@ pub(crate) async fn get_proxy_delay_api(
     Ok(web::Json(ResponseData {
         data: proxy_response_data,
     }))
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct UpdateProxyRuleData {
+    pub serial: String,
+    pub ip: String,
+}
+#[put("/api/proxy_rule")]
+pub(crate) async fn update_proxy_rule_api(
+    web::Json(data): web::Json<UpdateProxyRuleData>,
+) -> actix_web::Result<impl Responder> {
+    let dst_ip = yaml_util::get_one_unused_proxy();
+    if dst_ip.is_err() {
+        return Ok(web::Json(ResponseData {
+            data: "no available proxy".to_string(),
+        }));
+    }
+    let rule = Rule {
+        name: data.serial,
+        src_ip: data.ip,
+        dst_ip: dst_ip.unwrap(),
+    };
+    web::block(move || yaml_util::add_rules_to_config(rule)).await??;
+    return Ok(web::Json(ResponseData {
+        data: "success".to_string(),
+    }));
 }

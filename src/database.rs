@@ -78,24 +78,7 @@ pub fn create_databases() -> Result<(), RunTimeError> {
           );",
         (),
     )?;
-    //add floow_probable
-    add_column(
-        "group",
-        "floow_probable",
-        "ALTER TABLE `group` ADD COLUMN `floow_probable` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    //add like_probable
-    add_column(
-        "group",
-        "like_probable",
-        "ALTER TABLE `group` ADD COLUMN `like_probable` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    //add collect_probable
-    add_column(
-        "group",
-        "collect_probable",
-        "ALTER TABLE `group` ADD COLUMN `collect_probable` INTEGER NOT NULL DEFAULT 0",
-    )?;
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS device (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -128,31 +111,7 @@ pub fn create_databases() -> Result<(), RunTimeError> {
           );",
         (),
     )?;
-    add_column(
-        "account",
-        "username",
-        "ALTER TABLE account ADD COLUMN `username` TEXT DEFAULT NULL",
-    )?;
-    add_column(
-        "account",
-        "earnings",
-        "ALTER TABLE account ADD COLUMN `earnings` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    add_column(
-        "account",
-        "today_sales",
-        "ALTER TABLE account ADD COLUMN `today_sales` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    add_column(
-        "account",
-        "today_sold_items",
-        "ALTER TABLE account ADD COLUMN `today_sold_items` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    add_column(
-        "account",
-        "today_orders",
-        "ALTER TABLE account ADD COLUMN `today_orders` INTEGER NOT NULL DEFAULT 0",
-    )?;
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS material (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -188,16 +147,7 @@ pub fn create_databases() -> Result<(), RunTimeError> {
           );",
         (),
     )?;
-    //delete account
-    del_column("publish_job", "account")?;
-    add_column(
-        "publish_job",
-        "account_id",
-        "ALTER TABLE publish_job ADD COLUMN `account_id` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    //update publish_job set account = (select id from account where email = publish_job.account) where account like '%.com';
-    //update publish_job set account = (select id from account where username = publish_job.account) where account like '@%';
-    //update publish_job set account_id=account;
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS train_job (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -213,32 +163,7 @@ pub fn create_databases() -> Result<(), RunTimeError> {
           );",
         (),
     )?;
-    //delete account
-    del_column("train_job", "account")?;
-    add_column(
-        "train_job",
-        "account_id",
-        "ALTER TABLE train_job ADD COLUMN `account_id` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    //add floow_probable,like_probable,collect_probable
-    add_column(
-        "train_job",
-        "floow_probable",
-        "ALTER TABLE train_job ADD COLUMN `floow_probable` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    add_column(
-        "train_job",
-        "like_probable",
-        "ALTER TABLE train_job ADD COLUMN `like_probable` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    add_column(
-        "train_job",
-        "collect_probable",
-        "ALTER TABLE train_job ADD COLUMN `collect_probable` INTEGER NOT NULL DEFAULT 0",
-    )?;
-    //update train_job set account = (select id from account where email = train_job.account) where account like '%.com';
-    //update train_job set account = (select id from account where username = train_job.account) where account like '@%';
-    //update train_job set account_id=account;
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS dialog_watcher (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -98,6 +98,17 @@ pub fn read_yaml() -> Result<ProfileConfig, RunTimeError> {
     }
     Ok(config.unwrap())
 }
+pub fn get_one_unused_proxy() -> Result<String, RunTimeError> {
+    let config = read_yaml().unwrap();
+    let rules = config.rules;
+    for proxy in config.proxies {
+        let is_used = rules.iter().any(|rule| rule.contains(&proxy.name));
+        if !is_used {
+            return Ok(proxy.name);
+        }
+    }
+    Err(RunTimeError::new("no unused proxy"))
+}
 
 pub fn write_yaml(config: &ProfileConfig) -> Result<(), Box<dyn std::error::Error>> {
     let config_path = get_config_path();
@@ -171,7 +182,7 @@ pub struct Rule {
     pub dst_ip: String,
 }
 //SCRIPT,13,207.135.194.25
-pub fn add_rules_to_config(rule: Rule) {
+pub fn add_rules_to_config(rule: Rule) -> Result<(), RunTimeError> {
     let mut config = read_yaml().unwrap();
     let mut is_exist = false;
     //check if rule already exists
@@ -207,6 +218,7 @@ pub fn add_rules_to_config(rule: Rule) {
         .insert(0, format!("SCRIPT,{},{}", rule.name, rule.dst_ip));
     write_yaml(&config).unwrap();
     reload_clash();
+    Ok(())
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DelayResponseData {
