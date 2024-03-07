@@ -76,7 +76,7 @@ async fn main() -> io::Result<()> {
         // 将消息发送给 Actor
         ddl_actor_addr.do_send(msg);
     });
-    log::info!("starting HTTP server at port 8090 with 2 workers");
+    log::info!("starting HTTP server at port 7090 with 2 workers");
     HttpServer::new(move || {
         let cors = Cors::permissive();
         App::new()
@@ -166,7 +166,7 @@ async fn main() -> io::Result<()> {
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))
             .service(fs::Files::new("/", "./bin/dist/").index_file("index.html"))
     })
-    .bind(("0.0.0.0", 8090))?
+    .bind(("0.0.0.0", 7090))?
     .workers(2)
     .run()
     .await
