@@ -99,13 +99,8 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             email TEXT NOT NULL,
             pwd TEXT NOT NULL,
             fans INTEGER NOT NULL,
-            shop_creator INTEGER NOT NULL DEFAULT 0,
             device TEXT DEFAULT NULL,
             username TEXT DEFAULT NULL,
-            earnings INTEGER NOT NULL DEFAULT 0,
-            today_sales INTEGER NOT NULL DEFAULT 0,
-            today_sold_items INTEGER NOT NULL DEFAULT 0,
-            today_orders INTEGER NOT NULL DEFAULT 0,
             register_time TEXT DEFAULT CURRENT_TIMESTAMP,
             last_login_time TEXT DEFAULT CURRENT_TIMESTAMP
           );",
