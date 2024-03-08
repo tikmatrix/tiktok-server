@@ -60,5 +60,8 @@ pub fn random_one() -> Result<MusicDetails, RunTimeError> {
     for item in iter {
         data.push(item?);
     }
+    if data.is_empty() {
+        return Err(RunTimeError::NotFound);
+    }
     Ok(data[0].clone())
 }
