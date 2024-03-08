@@ -6,7 +6,7 @@ use crate::models::{
     ResponseData, ScriptQueryParams, TrainJobData,
 };
 use crate::models::{InstallFormData, ShellData};
-use crate::yaml_util::{ProfileConfig, ProfileConfigResponse, Rule};
+use crate::yaml_util::{ProfileConfigResponse, Rule};
 use crate::{
     account_dao, avatar_dao, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
     publish_job_dao, request_util, train_job_dao, yaml_util,
@@ -1307,3 +1307,4 @@ pub(crate) async fn update_proxy_rule_api(
         data: "success".to_string(),
     }));
 }
+
