@@ -1307,4 +1307,3 @@ pub(crate) async fn update_proxy_rule_api(
         data: "success".to_string(),
     }));
 }
-

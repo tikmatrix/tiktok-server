@@ -24,20 +24,63 @@ pub fn save(conn: &Mutex<Connection>, job_data: TrainJobData) -> Result<(), RunT
 pub fn update(conn: &Mutex<Connection>, job_data: TrainJobData) -> Result<(), RunTimeError> {
     let _lock = conn.lock();
     let conn = database::get_conn()?;
-    conn.execute(
-        "UPDATE train_job SET status = ?1 WHERE id = ?2",
-        rusqlite::params![job_data.status, job_data.id,],
+    //get by id
+    let mut stmt = conn.prepare(
+        "select id,group_id, account_id, like_probable, floow_probable, collect_probable, 
+        status, start_time, end_time from train_job where id = ?1",
     )?;
-    if job_data.status.unwrap() == 2 {
-        //update end_time
-        let end_time = chrono::Local::now().naive_local();
-        //convert to string
-        let end_time = end_time.format("%Y-%m-%d %H:%M:%S").to_string();
-        conn.execute(
-            "UPDATE train_job SET end_time = ?1 WHERE id = ?2",
-            rusqlite::params![end_time, job_data.id,],
-        )?;
+    let mut job_iter = stmt.query_map(rusqlite::params![job_data.id.unwrap()], |row| {
+        Ok(TrainJobDetails {
+            id: row.get(0)?,
+            group_id: row.get(1)?,
+            account_id: row.get(2)?,
+            like_probable: row.get(3)?,
+            floow_probable: row.get(4)?,
+            collect_probable: row.get(5)?,
+            status: row.get(6)?,
+            start_time: row.get(7)?,
+            end_time: row.get(8)?,
+            device: None,
+            username: None,
+        })
+    })?;
+    let mut job = job_iter.next().unwrap().unwrap();
+    if job_data.group_id != None {
+        job.group_id = job_data.group_id.unwrap();
     }
+    if job_data.account_id != None {
+        job.account_id = job_data.account_id.unwrap();
+    }
+    if job_data.like_probable != None {
+        job.like_probable = job_data.like_probable.unwrap();
+    }
+    if job_data.floow_probable != None {
+        job.floow_probable = job_data.floow_probable.unwrap();
+    }
+    if job_data.collect_probable != None {
+        job.collect_probable = job_data.collect_probable.unwrap();
+    }
+    if job_data.status != None {
+        job.status = job_data.status.unwrap();
+    }
+    if job_data.start_time != None {
+        job.start_time = job_data.start_time.unwrap();
+    }
+    conn.execute(
+        "UPDATE train_job SET group_id = ?1, account_id = ?2, like_probable = ?3, 
+         floow_probable = ?4, collect_probable = ?5, status = ?6, start_time = ?7 
+         WHERE id = ?8",
+        rusqlite::params![
+            job.group_id,
+            job.account_id,
+            job.like_probable,
+            job.floow_probable,
+            job.collect_probable,
+            job.status,
+            job.start_time,
+            job_data.id.unwrap(),
+        ],
+    )?;
     Ok(())
 }
 pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {

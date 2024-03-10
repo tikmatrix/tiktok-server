@@ -28,20 +28,68 @@ pub fn save(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), Ru
 pub fn update(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), RunTimeError> {
     let _lock = conn.lock();
     let conn = database::get_conn()?;
-    conn.execute(
-        "UPDATE publish_job SET status = ?1 WHERE id = ?2",
-        rusqlite::params![job_data.status, job_data.id,],
+    //get by id
+    let mut stmt = conn.prepare(
+        "select id,material, account_id, title, status, start_time, end_time, publish_type, product_link, group_id from publish_job where id = ?1",
     )?;
-    if job_data.status.unwrap() == 2 {
-        //update end_time
-        let end_time = chrono::Local::now().naive_local();
-        //convert to string
-        let end_time = end_time.format("%Y-%m-%d %H:%M:%S").to_string();
-        conn.execute(
-            "UPDATE train_job SET end_time = ?1 WHERE id = ?2",
-            rusqlite::params![end_time, job_data.id,],
-        )?;
+    let mut job_iter = stmt.query_map(rusqlite::params![job_data.id.unwrap()], |row| {
+        Ok(PublishJobDetails {
+            id: row.get(0)?,
+            material: row.get(1)?,
+            account_id: row.get(2)?,
+            title: row.get(3)?,
+            status: row.get(4)?,
+            start_time: row.get(5)?,
+            end_time: row.get(6)?,
+            device: None,
+            group_id: row.get(7)?,
+            publish_type: row.get(8)?,
+            product_link: row.get(9)?,
+            username: None,
+        })
+    })?;
+    let mut job = job_iter.next().unwrap().unwrap();
+    if job_data.material != None {
+        job.material = job_data.material.unwrap();
     }
+    if job_data.account_id != None {
+        job.account_id = job_data.account_id.unwrap();
+    }
+    if job_data.title != None {
+        job.title = job_data.title;
+    }
+    if job_data.status != None {
+        job.status = job_data.status.unwrap();
+    }
+    if job_data.start_time != None {
+        job.start_time = job_data.start_time.unwrap();
+    }
+
+    if job_data.group_id != None {
+        job.group_id = job_data.group_id.unwrap();
+    }
+
+    if job_data.product_link != None {
+        job.product_link = job_data.product_link;
+    }
+    conn.execute(
+        "UPDATE publish_job SET material = ?1, account_id = ?2, title = ?3, 
+         status = ?4, start_time = ?5, end_time = ?6, group_id = ?7, publish_type = ?8, product_link = ?9
+         WHERE id = ?10",
+        rusqlite::params![
+            job.material,
+            job.account_id,
+            job.title,
+            job.status,
+            job.start_time,
+            job.end_time,
+            job.group_id,
+            job.publish_type,
+            job.product_link,
+            job.id,
+        ],
+    )?;
+
     Ok(())
 }
 pub fn list_all() -> Result<PublishJobResponseData, RunTimeError> {
