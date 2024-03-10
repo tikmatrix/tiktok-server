@@ -27,13 +27,13 @@ pub struct AccountResponseData {
 }
 #[derive(Debug, MultipartForm)]
 pub struct MaterialFormData {
-    #[multipart(limit = "512 MiB")]
+    #[multipart(limit = "10240 MiB")]
     pub files: Vec<TempFile>,
     pub group_id: Option<Text<i32>>,
 }
 #[derive(Debug, MultipartForm)]
 pub struct InstallFormData {
-    #[multipart(limit = "512 MiB")]
+    #[multipart(limit = "10240 MiB")]
     pub file: TempFile,
     pub serial: Option<Text<String>>,
 }

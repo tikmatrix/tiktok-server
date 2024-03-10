@@ -30,7 +30,7 @@ pub fn update(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), 
     let conn = database::get_conn()?;
     //get by id
     let mut stmt = conn.prepare(
-        "select id,material, account_id, title, status, start_time, end_time, publish_type, product_link, group_id from publish_job where id = ?1",
+        "select id,material, account_id, title, status, start_time, end_time, group_id,publish_type, product_link from publish_job where id = ?1",
     )?;
     let mut job_iter = stmt.query_map(rusqlite::params![job_data.id.unwrap()], |row| {
         Ok(PublishJobDetails {

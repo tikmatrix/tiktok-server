@@ -83,11 +83,11 @@ async fn main() -> io::Result<()> {
             .wrap(cors)
             .app_data(conn_data.clone())
             .app_data(TempFileConfig::default().directory("./tmp"))
-            //默认限制50M上传,修改为1GB
+            //默认限制50M上传,修改为10GB
             .app_data(
                 MultipartFormConfig::default()
-                    .total_limit(1024 * 1024 * 1024 * 5)
-                    .memory_limit(1024 * 1024 * 100),
+                    .total_limit(1024 * 1024 * 1024 * 10)
+                    .memory_limit(1024 * 1024 * 1024 * 10),
             )
             .app_data(ddl_sender_data.clone())
             .service(routes::add_account_api)
