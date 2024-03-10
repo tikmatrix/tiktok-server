@@ -74,11 +74,16 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             collect_probable INTEGER NOT NULL DEFAULT 0,
             publish_type INTEGER NOT NULL DEFAULT 1,
             product_link TEXT DEFAULT NULL,
-            train_start_time TEXT DEFAULT '20:10,20:30,21:10,21:30'
+            train_start_time TEXT DEFAULT '20:10,20:30,21:10,21:30',
+            train_duration INTEGER NOT NULL DEFAULT 5
           );",
         (),
     )?;
-
+    add_column(
+        "group",
+        "train_duration",
+        "ALTER TABLE `group` ADD COLUMN train_duration INTEGER NOT NULL DEFAULT 5",
+    )?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS device (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -151,12 +156,18 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             floow_probable INTEGER NOT NULL DEFAULT 0,
             like_probable INTEGER NOT NULL DEFAULT 0,
             collect_probable INTEGER NOT NULL DEFAULT 0,
+            duration INTEGER NOT NULL DEFAULT 300,
             status INTEGER NOT NULL DEFAULT 0,
             start_time TEXT DEFAULT CURRENT_TIMESTAMP,
             end_time TEXT DEFAULT CURRENT_TIMESTAMP,
             create_time TEXT DEFAULT CURRENT_TIMESTAMP
           );",
         (),
+    )?;
+    add_column(
+        "train_job",
+        "duration",
+        "ALTER TABLE `train_job` ADD COLUMN duration INTEGER NOT NULL DEFAULT 300",
     )?;
 
     conn.execute(

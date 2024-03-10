@@ -105,6 +105,7 @@ pub struct TrainJobData {
     pub account_id: Option<i32>,
     pub status: Option<i32>,
     pub start_time: Option<String>,
+    pub duration: Option<i32>,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TrainJobDetails {
@@ -119,6 +120,7 @@ pub struct TrainJobDetails {
     pub end_time: String,
     pub device: Option<String>,
     pub username: Option<String>,
+    pub duration: i32,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TrainJobResponseData {
@@ -178,6 +180,7 @@ pub struct GroupData {
     pub floow_probable: i32,
     pub like_probable: i32,
     pub collect_probable: i32,
+    pub train_duration: i32,
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GroupDetails {
@@ -193,6 +196,7 @@ pub struct GroupDetails {
     pub floow_probable: i32,
     pub like_probable: i32,
     pub collect_probable: i32,
+    pub train_duration: i32,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GroupResponseData {

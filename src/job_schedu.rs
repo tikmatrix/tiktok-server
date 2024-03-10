@@ -97,6 +97,7 @@ impl JobScheduActor {
                                         collect_probable: Some(group_clone.collect_probable),
                                         status: Some(0),
                                         start_time: Some(start_time.to_owned()),
+                                        duration: Some(group_clone.train_duration),
                                     };
                                     let job_data_clone = job_data.clone();
                                     let result = train_job_dao::save(&self.conn, job_data_clone);
