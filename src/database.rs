@@ -75,14 +75,14 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             publish_type INTEGER NOT NULL DEFAULT 1,
             product_link TEXT DEFAULT NULL,
             train_start_time TEXT DEFAULT '20:10,20:30,21:10,21:30',
-            train_duration INTEGER NOT NULL DEFAULT 5
+            train_duration INTEGER NOT NULL DEFAULT 300
           );",
         (),
     )?;
     add_column(
         "group",
         "train_duration",
-        "ALTER TABLE `group` ADD COLUMN train_duration INTEGER NOT NULL DEFAULT 5",
+        "ALTER TABLE `group` ADD COLUMN train_duration INTEGER NOT NULL DEFAULT 300",
     )?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS device (
