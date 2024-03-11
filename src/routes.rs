@@ -6,7 +6,7 @@ use crate::models::{
     ResponseData, ScriptQueryParams, TrainJobData,
 };
 use crate::models::{InstallFormData, ShellData};
-use crate::yaml_util::ProfileConfigResponse;
+use crate::yaml_util::{ProfileConfigResponse, Rule};
 use crate::{
     account_dao, avatar_dao, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
     publish_job_dao, request_util, train_job_dao, yaml_util,
@@ -125,7 +125,7 @@ pub(crate) async fn install_api(
     let devices = device_dao::list_online_device(serial, None);
     if let Ok(devices) = devices {
         for device in devices.data {
-            let result = request_util::get_json::<ResponseData>(
+            let result = request_util::get_json::<ResponseData<String>>(
                 device.agent_ip.as_str(),
                 &format!(
                     "/api/device_install?serial={}&url={}",
@@ -384,7 +384,7 @@ pub(crate) async fn shell_api(
 
     let devices = device_dao::list_online_device(serial, None)?;
     for device in devices.data {
-        let result = request_util::get_json::<ResponseData>(
+        let result = request_util::get_json::<ResponseData<String>>(
             device.agent_ip.as_str(),
             &format!(
                 "/api/adb_shell?serial={}&cmd={}",
@@ -412,7 +412,7 @@ pub(crate) async fn script_api(
     let args = query.args.unwrap_or_else(|| "".to_string());
     let devices = device_dao::list_online_device(serial, None);
     for device in devices?.data {
-        let result = request_util::get_json::<ResponseData>(
+        let result = request_util::get_json::<ResponseData<String>>(
             device.agent_ip.as_str(),
             &format!(
                 "/api/script?serial={}&filename={}&args={}",
@@ -612,7 +612,7 @@ pub(crate) async fn update_settings_api(
 async fn update_agent_settings(settings: &Settings) {
     let nodes = device_dao::list_online_agent().unwrap();
     for node in nodes {
-        let result = request_util::post_json::<ResponseData, Settings>(
+        let result = request_util::post_json::<ResponseData<String>, Settings>(
             node.ip.as_str(),
             "/api/settings",
             &settings,
@@ -761,7 +761,7 @@ pub(crate) async fn task_status_api(
     if let Some(serial) = query.get("serial") {
         let devices = device_dao::list_online_device(Some(serial.to_string()), None)?;
         for device in devices.data {
-            let result = request_util::get_json::<ResponseData>(
+            let result = request_util::get_json::<ResponseData<String>>(
                 device.agent_ip.as_str(),
                 &format!("/api/device/task_status?serial={}", device.serial.as_str(),),
             )
@@ -1244,10 +1244,67 @@ pub(crate) async fn delete_all_post_comment_api() -> actix_web::Result<impl Resp
         data: device_response_data,
     }))
 }
-#[get("/api/get_proxys")]
+#[get("/api/proxy")]
 pub(crate) async fn get_proxys_api() -> actix_web::Result<impl Responder> {
     let proxy_response_data = web::block(move || yaml_util::read_yaml()).await??;
     Ok(web::Json(ProfileConfigResponse {
         data: proxy_response_data,
     }))
 }
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct AddProxyData {
+    pub urls: String,
+}
+#[post("/api/proxy")]
+pub(crate) async fn add_proxy_api(
+    web::Json(data): web::Json<AddProxyData>,
+) -> actix_web::Result<impl Responder> {
+    //check proxy urls
+    let urls: Vec<String> = data
+        .urls
+        .split("\n")
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    web::block(move || yaml_util::add_proxys_to_config(urls)).await??;
+    Ok(HttpResponse::NoContent())
+}
+#[get("/api/proxy/delay")]
+pub(crate) async fn get_proxy_delay_api(
+    web::Query(query): web::Query<HashMap<String, String>>,
+) -> actix_web::Result<impl Responder> {
+    let name = query
+        .get("name")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing name query parameter"))?
+        .clone();
+    let proxy_response_data = web::block(move || yaml_util::read_proxy_delay(&name)).await??;
+    Ok(web::Json(ResponseData {
+        data: proxy_response_data,
+    }))
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct UpdateProxyRuleData {
+    pub serial: String,
+    pub ip: String,
+}
+#[put("/api/proxy_rule")]
+pub(crate) async fn update_proxy_rule_api(
+    web::Json(data): web::Json<UpdateProxyRuleData>,
+) -> actix_web::Result<impl Responder> {
+    let dst_ip = yaml_util::get_one_unused_proxy();
+    if dst_ip.is_err() {
+        return Ok(web::Json(ResponseData {
+            data: "no available proxy".to_string(),
+        }));
+    }
+    let rule = Rule {
+        name: data.serial,
+        src_ip: data.ip,
+        dst_ip: dst_ip.unwrap(),
+    };
+    web::block(move || yaml_util::add_rules_to_config(rule)).await??;
+    return Ok(web::Json(ResponseData {
+        data: "success".to_string(),
+    }));
+}
+

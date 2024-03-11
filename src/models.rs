@@ -7,14 +7,9 @@ pub struct AccountData {
     pub email: String,
     pub pwd: String,
     pub fans: i32,
-    pub shop_creator: i32,
     pub device: Option<String>,
     pub username: Option<String>,
     pub group_id: Option<i32>,
-    pub earnings: Option<i32>,
-    pub today_sales: Option<i32>,
-    pub today_sold_items: Option<i32>,
-    pub today_orders: Option<i32>,
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AccountDetails {
@@ -22,14 +17,9 @@ pub struct AccountDetails {
     pub email: String,
     pub pwd: String,
     pub fans: i32,
-    pub shop_creator: i32,
     pub device: Option<String>,
     pub username: Option<String>,
     pub group_id: Option<i32>,
-    pub earnings: i32,
-    pub today_sales: i32,
-    pub today_sold_items: i32,
-    pub today_orders: i32,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AccountResponseData {
@@ -170,8 +160,8 @@ pub struct ScriptQueryParams {
     pub args: Option<String>,
 }
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ResponseData {
-    pub data: String,
+pub struct ResponseData<T> {
+    pub data: T,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

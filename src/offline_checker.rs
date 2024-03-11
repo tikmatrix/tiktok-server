@@ -39,7 +39,7 @@ async fn check() {
     for device in online_devices {
         let serial = device.serial.clone();
         let host = device.agent_ip.clone();
-        let result = request_util::get_json::<ResponseData>(
+        let result = request_util::get_json::<ResponseData<String>>(
             &host,
             &format!("/api/is_online?serial={}", &serial),
         )
