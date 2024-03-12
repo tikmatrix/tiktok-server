@@ -127,7 +127,6 @@ pub struct TrainJobResponseData {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DeviceData {
     pub serial: String,
-    pub forward_port: i32,
     pub online: i32,
     pub agent_ip: String,
 }
@@ -136,7 +135,6 @@ pub struct DeviceData {
 pub struct DeviceDetails {
     pub id: i32,
     pub serial: String,
-    pub forward_port: i32,
     pub online: i32,
     pub agent_ip: String,
     pub init: i32,

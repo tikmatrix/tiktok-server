@@ -83,7 +83,6 @@ pub fn create_databases() -> Result<(), RunTimeError> {
         "CREATE TABLE IF NOT EXISTS device (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             serial TEXT NOT NULL,
-            forward_port INTEGER NOT NULL DEFAULT 0,
             online INTEGER NOT NULL DEFAULT 0,
             agent_ip TEXT NOT NULL,
             master_ip TEXT NOT NULL,
