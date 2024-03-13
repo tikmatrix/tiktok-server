@@ -100,7 +100,7 @@ pub fn list_all() -> Result<PublishJobResponseData, RunTimeError> {
     publish_job.publish_type,publish_job.product_link,account.username
     FROM publish_job
     left join account on publish_job.account_id = account.id
-    ORDER BY publish_job.id DESC LIMIT 200
+    ORDER BY publish_job.id DESC LIMIT 2000
     ")?;
     let mut data = Vec::new();
     let job_iter = stmt.query_map((), |row| {

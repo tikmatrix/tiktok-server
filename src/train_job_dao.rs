@@ -97,7 +97,7 @@ pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
     train_job.like_probable,train_job.floow_probable,train_job.collect_probable,train_job.status,
     train_job.start_time,train_job.end_time,account.device,account.username,train_job.duration FROM train_job
     left join account on train_job.account_id = account.id
-    ORDER BY train_job.id DESC LIMIT 200
+    ORDER BY train_job.id DESC LIMIT 2000
     ",
     )?;
     let mut data = Vec::new();
