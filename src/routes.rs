@@ -121,7 +121,7 @@ pub(crate) async fn install_api(
     } else {
         log::error!("my_local_ip: {:?}", my_local_ip);
     }
-    let url: String = format!("http://{}:8090/apk/{}", my_local_ip.unwrap(), file_name);
+    let url: String = format!("http://{}:7090/apk/{}", my_local_ip.unwrap(), file_name);
     let devices = device_dao::list_online_device(serial, None);
     if let Ok(devices) = devices {
         for device in devices.data {

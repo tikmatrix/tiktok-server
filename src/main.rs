@@ -78,7 +78,7 @@ async fn main() -> io::Result<()> {
     });
     log::info!("starting HTTP server at port 8090 with 2 workers");
     let mut port = 8090;
-    if cfg!(debug_assertions){
+    if cfg!(debug_assertions) {
         port = 18090;
     }
     HttpServer::new(move || {
