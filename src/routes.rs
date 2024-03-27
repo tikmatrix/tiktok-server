@@ -931,7 +931,7 @@ pub(crate) async fn add_license_api(
     web::Json(key_data): web::Json<KeyData>,
 ) -> actix_web::Result<impl Responder> {
     let key = key_data.key.clone();
-    let license = add_license(key);
+    let license = web::block(move || add_license(key)).await?;
     Ok(web::Json(license))
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
