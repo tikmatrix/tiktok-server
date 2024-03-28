@@ -564,6 +564,7 @@ struct Settings {
     license: Option<String>,
     openai_api_key: Option<String>,
     email_suffix: Option<String>,
+    password: Option<String>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 struct SettingsResponseData {
@@ -583,6 +584,7 @@ pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
     let license = std::env::var("LICENSE").unwrap_or_else(|_| "".to_string());
     let openai_api_key = std::env::var("OPENAI_API_KEY").unwrap_or_else(|_| "".to_string());
     let email_suffix = std::env::var("EMAIL_SUFFIX").unwrap_or_else(|_| "".to_string());
+    let password = std::env::var("PASSWORD").unwrap_or_else(|_| "".to_string());
     let settings = Settings {
         proxy_url: Some(proxy_url),
         server_url: Some(server_url),
@@ -594,6 +596,7 @@ pub(crate) async fn get_settings_api() -> actix_web::Result<impl Responder> {
         license: Some(license),
         openai_api_key: Some(openai_api_key),
         email_suffix: Some(email_suffix),
+        password: Some(password),
     };
     Ok(web::Json(SettingsResponseData {
         code: 0,
@@ -740,6 +743,9 @@ fn get_settings() -> Settings {
     let email_suffix = db
         .get::<String>("email_suffix")
         .unwrap_or_else(|| "".to_string());
+    let password = db
+        .get::<String>("password")
+        .unwrap_or_else(|| "".to_string());
     Settings {
         proxy_url: Some(proxy_url),
         server_url: Some(server_url),
@@ -751,6 +757,7 @@ fn get_settings() -> Settings {
         license: Some(license),
         openai_api_key: Some(openai_api_key),
         email_suffix: Some(email_suffix),
+        password: Some(password),
     }
 }
 
@@ -1306,4 +1313,23 @@ pub(crate) async fn update_proxy_rule_api(
     return Ok(web::Json(ResponseData {
         data: "success".to_string(),
     }));
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct AuthData {
+    password: String,
+}
+#[post["/api/auth"]]
+pub(crate) async fn auth_api(
+    web::Json(data): web::Json<AuthData>,
+) -> actix_web::Result<impl Responder> {
+    let settings = get_settings();
+    if data.password == settings.password.unwrap() {
+        return Ok(web::Json(ResponseData {
+            data: "success".to_string(),
+        }));
+    }
+    Ok(web::Json(ResponseData {
+        data: "fail".to_string(),
+    }))
 }

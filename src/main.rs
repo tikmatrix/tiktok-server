@@ -168,6 +168,7 @@ async fn main() -> io::Result<()> {
             .service(routes::add_proxy_api)
             .service(routes::get_proxy_delay_api)
             .service(routes::update_proxy_rule_api)
+            .service(routes::auth_api)
             .service(fs::Files::new("/avatar", "./upload/avatar/").index_file("index.html"))
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))
