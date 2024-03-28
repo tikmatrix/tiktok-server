@@ -653,6 +653,7 @@ pub fn setup_env() {
         &settings.openai_api_key.unwrap_or_default(),
     );
     std::env::set_var("EMAIL_SUFFIX", &settings.email_suffix.unwrap_or_default());
+    std::env::set_var("PASSWORD", &settings.password.unwrap_or_default());
 
     // if cfg!(debug_assertions) {
     //     std::env::set_var("RUST_BACKTRACE", "1");
@@ -710,6 +711,11 @@ fn set_settings(settings: &Settings) {
             db.set("email_suffix", email_suffix).unwrap();
         }
     }
+    if let Some(password) = &settings.password {
+        if !password.is_empty() {
+            db.set("password", password).unwrap();
+        }
+    }
 }
 fn get_settings() -> Settings {
     let db = get_db();
@@ -745,7 +751,7 @@ fn get_settings() -> Settings {
         .unwrap_or_else(|| "".to_string());
     let password = db
         .get::<String>("password")
-        .unwrap_or_else(|| "".to_string());
+        .unwrap_or_else(|| "123456".to_string());
     Settings {
         proxy_url: Some(proxy_url),
         server_url: Some(server_url),
