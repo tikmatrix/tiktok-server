@@ -51,7 +51,7 @@ async fn main() -> io::Result<()> {
             Cleanup::KeepLogFiles(7), // - keep at most 7 log files
         )
         .duplicate_to_stderr(flexi_logger::Duplicate::Info)
-        .format(flexi_logger::colored_with_thread)
+        .format(flexi_logger::with_thread)
         .write_mode(WriteMode::BufferAndFlush)
         .start()
         .expect("flexi_logger init error");
