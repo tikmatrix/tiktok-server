@@ -1,4 +1,9 @@
-use crate::comment_dao::{self, PostCommentData, PostCommentTopicData};
+use crate::dao::comment_dao::{self, PostCommentData, PostCommentTopicData};
+use crate::dao::data_analytics_dao::DataAnalytics;
+use crate::dao::{
+    account_dao, avatar_dao, data_analytics_dao, device_dao, dialog_watcher_dao, group_dao,
+    material_dao, music_dao, publish_job_dao, train_job_dao,
+};
 use crate::ddl_actor::DdlMessage;
 use crate::models::{
     AccountData, AvatarData, AvatarFormData, CommonResponse, DeviceData, DialogWatcherData,
@@ -7,10 +12,7 @@ use crate::models::{
 };
 use crate::models::{InstallFormData, ShellData};
 use crate::yaml_util::{ProfileConfigResponse, Rule};
-use crate::{
-    account_dao, avatar_dao, device_dao, dialog_watcher_dao, group_dao, material_dao, music_dao,
-    publish_job_dao, request_util, train_job_dao, yaml_util,
-};
+use crate::{request_util, yaml_util};
 use actix_multipart::form::MultipartForm;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use local_ip_address::local_ip;
@@ -1338,4 +1340,19 @@ pub(crate) async fn auth_api(
     Ok(web::Json(ResponseData {
         data: "fail".to_string(),
     }))
+}
+#[post["/api/data_analysis"]]
+pub(crate) async fn add_data_analysis_api(
+    ddl_sender: web::Data<Arc<Mutex<Sender<DdlMessage>>>>,
+    web::Json(data): web::Json<DataAnalytics>,
+) -> actix_web::Result<impl Responder> {
+    web::block(move || data_analytics_dao::save(&ddl_sender, data)).await??;
+    Ok(web::Json(ResponseData {
+        data: "success".to_string(),
+    }))
+}
+#[get["/api/data_analysis"]]
+pub(crate) async fn get_data_analysis_api() -> actix_web::Result<impl Responder> {
+    let data = web::block(move || data_analytics_dao::list_all()).await??;
+    Ok(web::Json(data))
 }

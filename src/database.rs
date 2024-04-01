@@ -224,6 +224,23 @@ pub fn create_databases() -> Result<(), RunTimeError> {
       );",
         (),
     )?;
+    // data_analytics
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS data_analytics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        day_hour TEXT NOT NULL,
+        follower_count INTEGER NOT NULL DEFAULT 0,
+        video_count INTEGER NOT NULL DEFAULT 0,
+        video_collect_count INTEGER NOT NULL DEFAULT 0,
+        video_comment_count INTEGER NOT NULL DEFAULT 0,
+        video_like_count INTEGER NOT NULL DEFAULT 0,
+        video_play_count INTEGER NOT NULL DEFAULT 0,
+        create_time TEXT DEFAULT CURRENT_TIMESTAMP,
+        update_time TEXT DEFAULT CURRENT_TIMESTAMP
+      );",
+        (),
+    )?;
 
     Ok(())
 }

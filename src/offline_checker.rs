@@ -1,4 +1,4 @@
-use crate::{device_dao, models::ResponseData};
+use crate::{dao::device_dao, models::ResponseData};
 use actix::prelude::*;
 use std::time::Duration;
 

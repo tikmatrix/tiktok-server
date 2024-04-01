@@ -6,9 +6,12 @@ use rusqlite::Connection;
 use std::{sync::Mutex, time::Duration};
 
 use crate::{
-    account_dao, group_dao, material_dao,
+    dao::account_dao,
+    dao::group_dao,
+    dao::material_dao,
+    dao::publish_job_dao,
+    dao::train_job_dao,
     models::{PublishJobData, TrainJobData},
-    publish_job_dao, train_job_dao,
 };
 
 pub struct JobScheduActor {

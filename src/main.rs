@@ -17,27 +17,16 @@ use flexi_logger::{FileSpec, WriteMode};
 use std::io;
 use std::sync::Arc;
 use std::sync::Mutex;
-mod account_dao;
-mod avatar_dao;
-mod comment_dao;
+mod dao;
 mod database;
 mod ddl_actor;
-mod device_dao;
-mod dialog_watcher_dao;
-mod group_dao;
 mod job_schedu;
-mod material_dao;
 mod models;
-mod music_dao;
 mod offline_checker;
-mod publish_job_dao;
 mod request_util;
 mod routes;
 mod runtime_err;
-mod tests;
-mod train_job_dao;
 mod yaml_util;
-
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     // initialize logger
@@ -61,7 +50,7 @@ async fn main() -> io::Result<()> {
     let conn = database::get_conn().expect("get sqlite connection error");
     let conn_mutex = Mutex::new(conn);
     let conn_data = web::Data::new(conn_mutex);
-    let _addr = JobScheduActor {
+    JobScheduActor {
         conn: conn_data.clone(),
     }
     .start();
@@ -169,6 +158,8 @@ async fn main() -> io::Result<()> {
             .service(routes::get_proxy_delay_api)
             .service(routes::update_proxy_rule_api)
             .service(routes::auth_api)
+            .service(routes::add_data_analysis_api)
+            .service(routes::get_data_analysis_api)
             .service(fs::Files::new("/avatar", "./upload/avatar/").index_file("index.html"))
             .service(fs::Files::new("/apk", "./upload/apk/").index_file("index.html"))
             .service(fs::Files::new("/material", "./upload/material/").index_file("index.html"))

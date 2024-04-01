@@ -1,0 +1,11 @@
+pub(crate) mod account_dao;
+pub(crate) mod avatar_dao;
+pub(crate) mod comment_dao;
+pub(crate) mod data_analytics_dao;
+pub(crate) mod device_dao;
+pub(crate) mod dialog_watcher_dao;
+pub(crate) mod group_dao;
+pub(crate) mod material_dao;
+pub(crate) mod music_dao;
+pub(crate) mod publish_job_dao;
+pub(crate) mod train_job_dao;
