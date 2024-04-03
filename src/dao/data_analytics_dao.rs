@@ -45,7 +45,18 @@ pub fn save(
 }
 pub fn list_all() -> Result<Vec<DataAnalytics>, RunTimeError> {
     let conn = database::get_conn()?;
-    let mut stmt = conn.prepare("SELECT * FROM data_analytics")?;
+    let mut stmt = conn.prepare(
+        "SELECT 0 AS id,
+    username,
+    day_hour,
+    MAX(follower_count) AS follower_count,
+    MAX(video_count) AS video_count,
+    MAX(video_collect_count) AS video_collect_count,
+    MAX(video_comment_count) AS video_comment_count,
+    MAX(video_like_count) AS video_like_count,
+    MAX(video_play_count) AS video_play_count
+     FROM data_analytics group by username,day_hour",
+    )?;
     let data_analytics = stmt
         .query_map([], |row| {
             Ok(DataAnalytics {
