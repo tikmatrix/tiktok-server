@@ -56,7 +56,7 @@ pub fn list_all() -> Result<Vec<DataAnalytics>, RunTimeError> {
     MAX(video_like_count) AS video_like_count,
     MAX(video_play_count) AS video_play_count
      FROM data_analytics group by username,day_hour
-     ORDER BY MAX(video_play_count) DESC LIMIT 3000",
+     ORDER BY day_hour,MAX(video_play_count) DESC LIMIT 3000",
     )?;
     let data_analytics = stmt
         .query_map([], |row| {
