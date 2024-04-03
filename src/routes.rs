@@ -1354,5 +1354,5 @@ pub(crate) async fn add_data_analysis_api(
 #[get["/api/data_analysis"]]
 pub(crate) async fn get_data_analysis_api() -> actix_web::Result<impl Responder> {
     let data = web::block(move || data_analytics_dao::list_all()).await??;
-    Ok(web::Json(data))
+    Ok(web::Json(ResponseData::<Vec<DataAnalytics>> { data }))
 }
