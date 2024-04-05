@@ -30,7 +30,7 @@ pub fn update(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), 
     let conn = database::get_conn()?;
     //get by id
     let mut stmt = conn.prepare(
-        "select id,material, account_id, title, status, start_time, end_time, group_id,publish_type, product_link from publish_job where id = ?1",
+        "select id,material, account_id, title, status, start_time, end_time, group_id,publish_type, product_link,remark from publish_job where id = ?1",
     )?;
     let mut job_iter = stmt.query_map(rusqlite::params![job_data.id.unwrap()], |row| {
         Ok(PublishJobDetails {
@@ -45,6 +45,7 @@ pub fn update(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), 
             group_id: row.get(7)?,
             publish_type: row.get(8)?,
             product_link: row.get(9)?,
+            remark: row.get(10)?,
             username: None,
         })
     })?;
@@ -72,9 +73,12 @@ pub fn update(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), 
     if job_data.product_link != None {
         job.product_link = job_data.product_link;
     }
+    if job_data.remark != None {
+        job.remark = job_data.remark;
+    }
     conn.execute(
         "UPDATE publish_job SET material = ?1, account_id = ?2, title = ?3, 
-         status = ?4, start_time = ?5, end_time = ?6, group_id = ?7, publish_type = ?8, product_link = ?9
+         status = ?4, start_time = ?5, end_time = ?6, group_id = ?7, publish_type = ?8, product_link = ?9, remark = ?11
          WHERE id = ?10",
         rusqlite::params![
             job.material,
@@ -87,6 +91,7 @@ pub fn update(conn: &Mutex<Connection>, job_data: PublishJobData) -> Result<(), 
             job.publish_type,
             job.product_link,
             job.id,
+            job.remark
         ],
     )?;
 
@@ -97,7 +102,7 @@ pub fn list_all() -> Result<PublishJobResponseData, RunTimeError> {
     let mut stmt = conn.prepare("
     SELECT publish_job.id,publish_job.material, publish_job.account_id, publish_job.title, publish_job.status, 
     publish_job.start_time,publish_job.end_time,account.device,publish_job.group_id,
-    publish_job.publish_type,publish_job.product_link,account.username
+    publish_job.publish_type,publish_job.product_link,account.username,publish_job.remark
     FROM publish_job
     left join account on publish_job.account_id = account.id
     ORDER BY publish_job.id DESC LIMIT 2000
@@ -117,6 +122,7 @@ pub fn list_all() -> Result<PublishJobResponseData, RunTimeError> {
             publish_type: row.get(9)?,
             product_link: row.get(10)?,
             username: row.get(11)?,
+            remark: row.get(12)?,
         })
     })?;
     for publish_job in job_iter {
@@ -137,7 +143,7 @@ pub fn list_runable(agent_ip: String) -> Result<PublishJobResponseData, RunTimeE
     let mut stmt = conn.prepare("
     SELECT publish_job.id,publish_job.material, publish_job.account_id, publish_job.title, 
     publish_job.status, publish_job.start_time,publish_job.end_time,account.device,publish_job.group_id,
-    publish_job.publish_type,publish_job.product_link,account.username
+    publish_job.publish_type,publish_job.product_link,account.username,publish_job.remark
     FROM publish_job
     left join account on publish_job.account_id = account.id
     left join device on account.device = device.serial
@@ -161,6 +167,7 @@ pub fn list_runable(agent_ip: String) -> Result<PublishJobResponseData, RunTimeE
             publish_type: row.get(9)?,
             product_link: row.get(10)?,
             username: row.get(11)?,
+            remark: row.get(12)?,
         })
     })?;
     for publish_job in job_iter {

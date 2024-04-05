@@ -28,7 +28,7 @@ pub fn update(conn: &Mutex<Connection>, job_data: TrainJobData) -> Result<(), Ru
     //get by id
     let mut stmt = conn.prepare(
         "select id,group_id, account_id, like_probable, floow_probable, collect_probable, 
-        status, start_time, end_time,duration from train_job where id = ?1",
+        status, start_time, end_time,duration,remark from train_job where id = ?1",
     )?;
     let mut job_iter = stmt.query_map(rusqlite::params![job_data.id.unwrap()], |row| {
         Ok(TrainJobDetails {
@@ -44,6 +44,7 @@ pub fn update(conn: &Mutex<Connection>, job_data: TrainJobData) -> Result<(), Ru
             device: None,
             username: None,
             duration: row.get(9)?,
+            remark: row.get(10)?,
         })
     })?;
     let mut job = job_iter.next().unwrap().unwrap();
@@ -71,9 +72,12 @@ pub fn update(conn: &Mutex<Connection>, job_data: TrainJobData) -> Result<(), Ru
     if job_data.duration != None {
         job.duration = job_data.duration.unwrap();
     }
+    if job_data.remark != None {
+        job.remark = job_data.remark;
+    }
     conn.execute(
         "UPDATE train_job SET group_id = ?1, account_id = ?2, like_probable = ?3, 
-         floow_probable = ?4, collect_probable = ?5, status = ?6, start_time = ?7, duration = ?9
+         floow_probable = ?4, collect_probable = ?5, status = ?6, start_time = ?7, duration = ?9, remark = ?10
          WHERE id = ?8",
         rusqlite::params![
             job.group_id,
@@ -85,6 +89,7 @@ pub fn update(conn: &Mutex<Connection>, job_data: TrainJobData) -> Result<(), Ru
             job.start_time,
             job_data.id.unwrap(),
             job.duration,
+            job.remark
         ],
     )?;
     Ok(())
@@ -95,7 +100,7 @@ pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
         "
     SELECT train_job.id,train_job.group_id,train_job.account_id,
     train_job.like_probable,train_job.floow_probable,train_job.collect_probable,train_job.status,
-    train_job.start_time,train_job.end_time,account.device,account.username,train_job.duration FROM train_job
+    train_job.start_time,train_job.end_time,account.device,account.username,train_job.duration,train_job.remark FROM train_job
     left join account on train_job.account_id = account.id
     ORDER BY train_job.id DESC LIMIT 2000
     ",
@@ -115,6 +120,7 @@ pub fn list_all() -> Result<TrainJobResponseData, RunTimeError> {
             device: row.get(9)?,
             username: row.get(10)?,
             duration: row.get(11)?,
+            remark: row.get(12)?,
         })
     })?;
     for job in job_iter {
@@ -133,7 +139,7 @@ pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeErr
         "
     SELECT train_job.id,train_job.group_id,train_job.account_id,
     train_job.like_probable,train_job.floow_probable,train_job.collect_probable,train_job.status,
-    train_job.start_time,train_job.end_time,account.device,account.username,train_job.duration FROM train_job
+    train_job.start_time,train_job.end_time,account.device,account.username,train_job.duration,train_job.remark FROM train_job
     left join account on train_job.account_id = account.id
     left join device on account.device = device.serial
     WHERE train_job.status = 0 AND device.agent_ip = ?1 
@@ -157,6 +163,7 @@ pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeErr
             device: row.get(9)?,
             username: row.get(10)?,
             duration: row.get(11)?,
+            remark: row.get(12)?,
         })
     })?;
     for publish_job in job_iter {

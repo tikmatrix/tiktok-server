@@ -101,6 +101,7 @@ impl JobScheduActor {
                                         status: Some(0),
                                         start_time: Some(start_time.to_owned()),
                                         duration: Some(group_clone.train_duration),
+                                        remark: None,
                                     };
                                     let job_data_clone = job_data.clone();
                                     let result = train_job_dao::save(&self.conn, job_data_clone);
@@ -224,6 +225,7 @@ impl JobScheduActor {
                                         group_id: Some(group_clone.id),
                                         publish_type: group_clone.publish_type,
                                         product_link: group_clone.product_link,
+                                        remark: None,
                                     };
                                     let job_data_clone = job_data.clone();
                                     let result = publish_job_dao::save(&self.conn, job_data_clone);

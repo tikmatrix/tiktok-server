@@ -74,6 +74,7 @@ pub struct PublishJobData {
     pub group_id: Option<i32>,
     pub publish_type: i32,
     pub product_link: Option<String>,
+    pub remark: Option<String>,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PublishJobDetails {
@@ -89,6 +90,7 @@ pub struct PublishJobDetails {
     pub publish_type: i32,
     pub product_link: Option<String>,
     pub username: Option<String>,
+    pub remark: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -106,6 +108,7 @@ pub struct TrainJobData {
     pub status: Option<i32>,
     pub start_time: Option<String>,
     pub duration: Option<i32>,
+    pub remark: Option<String>,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TrainJobDetails {
@@ -121,6 +124,7 @@ pub struct TrainJobDetails {
     pub device: Option<String>,
     pub username: Option<String>,
     pub duration: i32,
+    pub remark: Option<String>,
 }
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TrainJobResponseData {

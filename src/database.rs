@@ -138,6 +138,7 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             account_id INTEGER NOT NULL DEFAULT 0,
             title TEXT DEFAULT NULL,
             status INTEGER NOT NULL DEFAULT 0,
+            remark TEXT DEFAULT NULL,
             start_time TEXT DEFAULT CURRENT_TIMESTAMP,
             end_time TEXT DEFAULT CURRENT_TIMESTAMP,
             publish_type INTEGER NOT NULL DEFAULT 1,
@@ -146,7 +147,11 @@ pub fn create_databases() -> Result<(), RunTimeError> {
           );",
         (),
     )?;
-
+    add_column(
+        "publish_job",
+        "remark",
+        "ALTER TABLE `publish_job` ADD COLUMN remark TEXT DEFAULT NULL",
+    )?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS train_job (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -156,6 +161,7 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             like_probable INTEGER NOT NULL DEFAULT 0,
             collect_probable INTEGER NOT NULL DEFAULT 0,
             duration INTEGER NOT NULL DEFAULT 300,
+            remark TEXT DEFAULT NULL,
             status INTEGER NOT NULL DEFAULT 0,
             start_time TEXT DEFAULT CURRENT_TIMESTAMP,
             end_time TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -167,6 +173,11 @@ pub fn create_databases() -> Result<(), RunTimeError> {
         "train_job",
         "duration",
         "ALTER TABLE `train_job` ADD COLUMN duration INTEGER NOT NULL DEFAULT 300",
+    )?;
+    add_column(
+        "train_job",
+        "remark",
+        "ALTER TABLE `train_job` ADD COLUMN remark TEXT DEFAULT NULL",
     )?;
 
     conn.execute(
