@@ -110,12 +110,10 @@ pub(crate) async fn update_username_api(
 pub(crate) async fn install_api(
     MultipartForm(form): MultipartForm<InstallFormData>,
 ) -> actix_web::Result<impl Responder> {
-    log::info!("install api");
     let serial = form.serial.as_ref().map(|s| s.0.clone());
     let file = form.file;
     let file_name = file.file_name.unwrap();
     let path = format!("upload/apk/{}", file_name);
-    log::debug!("saving to {path}");
     file.file.persist(path).unwrap();
     let my_local_ip = local_ip();
     if let Ok(my_local_ip) = my_local_ip {
@@ -124,10 +122,11 @@ pub(crate) async fn install_api(
         log::error!("my_local_ip: {:?}", my_local_ip);
     }
     let url: String = format!("http://{}:7090/apk/{}", my_local_ip.unwrap(), file_name);
-    let devices = device_dao::list_online_device(serial, None);
-    if let Ok(devices) = devices {
-        for device in devices.data {
-            let result = request_util::get_json::<ResponseData<String>>(
+    let devices = web::block(move || device_dao::list_online_device(serial, None)).await??;
+    let task = devices.data.into_iter().map(|device| {
+        let url = url.clone();
+        async move {
+            match request_util::get_json::<ResponseData<String>>(
                 device.agent_ip.as_str(),
                 &format!(
                     "/api/device_install?serial={}&url={}",
@@ -135,15 +134,18 @@ pub(crate) async fn install_api(
                     url.as_str(),
                 ),
             )
-            .await;
-            if let Ok(result) = result {
-                log::info!("device install result: {:?}", result);
-            } else {
-                log::error!("device install error: {:?}", result);
+            .await
+            {
+                Ok(result) => {
+                    log::info!("device install result: {:?}", result);
+                }
+                Err(e) => {
+                    log::error!("device install error: {:?}", e);
+                }
             }
         }
-    }
-
+    });
+    let _ = futures_util::future::join_all(task).await;
     Ok(HttpResponse::Ok())
 }
 
@@ -382,26 +384,24 @@ pub(crate) async fn shell_api(
     web::Json(shell_data): web::Json<ShellData>,
 ) -> actix_web::Result<impl Responder> {
     let serial = shell_data.serial.clone();
-    let cmd = shell_data.cmd.clone();
-
-    let devices = device_dao::list_online_device(serial, None)?;
-    for device in devices.data {
-        let result = request_util::get_json::<ResponseData<String>>(
-            device.agent_ip.as_str(),
-            &format!(
-                "/api/adb_shell?serial={}&cmd={}",
-                device.serial.as_str(),
-                cmd
-            ),
-        )
-        .await;
-        if let Ok(result) = result {
-            log::info!("{} -> shell result: {:?}", device.serial, result);
-        } else {
-            log::error!("{} -> shell error: {:?}", device.serial, result);
+    let devices = web::block(move || device_dao::list_online_device(serial, None)).await??;
+    // 将每个设备操作转换为异步任务
+    let tasks = devices.data.into_iter().map(|device| {
+        let cmd_clone = shell_data.cmd.clone();
+        async move {
+            match request_util::get_json::<ResponseData<String>>(
+                &device.agent_ip,
+                &format!("/api/adb_shell?serial={}&cmd={}", &device.serial, cmd_clone),
+            )
+            .await
+            {
+                Ok(result) => log::debug!("{} -> shell result: {:?}", device.serial, result),
+                Err(e) => log::error!("{} -> shell error: {:?}", device.serial, e),
+            }
         }
-    }
-
+    });
+    // 并发执行所有任务并等待全部完成
+    let _ = futures_util::future::join_all(tasks).await;
     Ok(HttpResponse::NoContent())
 }
 
@@ -409,28 +409,35 @@ pub(crate) async fn shell_api(
 pub(crate) async fn script_api(
     web::Query(query): web::Query<ScriptQueryParams>,
 ) -> actix_web::Result<impl Responder> {
-    let script = query.script;
     let serial = query.serial;
-    let args = query.args.unwrap_or_else(|| "".to_string());
-    let devices = device_dao::list_online_device(serial, None);
-    for device in devices?.data {
-        let result = request_util::get_json::<ResponseData<String>>(
-            device.agent_ip.as_str(),
-            &format!(
-                "/api/script?serial={}&filename={}&args={}",
-                device.serial.as_str(),
-                script.as_str(),
-                args.as_str()
-            ),
-        )
-        .await;
-        if let Ok(result) = result {
-            log::debug!("{} -> script result: {:?}", device.serial, result);
-        } else {
-            log::error!("{} -> script error: {:?}", device.serial, result);
+    let devices = web::block(move || device_dao::list_online_device(serial, None)).await??;
+    // 将每个设备操作转换为异步任务
+    let task = devices.data.into_iter().map(|device| {
+        let script = query.script.clone();
+        let args = query.args.clone().unwrap_or("".to_string());
+        async move {
+            match request_util::get_json::<ResponseData<String>>(
+                device.agent_ip.as_str(),
+                &format!(
+                    "/api/script?serial={}&filename={}&args={}",
+                    device.serial.as_str(),
+                    script.as_str(),
+                    args.as_str()
+                ),
+            )
+            .await
+            {
+                Ok(result) => {
+                    log::info!("{} -> script result: {:?}", device.serial, result);
+                }
+                Err(e) => {
+                    log::error!("{} -> script error: {:?}", device.serial, e);
+                }
+            }
         }
-    }
-
+    });
+    // 并发执行所有任务并等待全部完成
+    let _ = futures_util::future::join_all(task).await;
     Ok(HttpResponse::NoContent())
 }
 
@@ -946,7 +953,7 @@ pub(crate) async fn add_license_api(
     web::Json(key_data): web::Json<KeyData>,
 ) -> actix_web::Result<impl Responder> {
     let key = key_data.key.clone();
-    let license = web::block(move || add_license(key)).await?;
+    let license = add_license(key).await;
     Ok(web::Json(license))
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -954,7 +961,7 @@ struct KeyData {
     pub key: String,
     pub uid: Option<String>,
 }
-fn add_license(key: String) -> VerifyLicenseResponse {
+async fn add_license(key: String) -> VerifyLicenseResponse {
     let uid: String = machine_uid::get().unwrap();
     let result: VerifyLicenseResponse = VerifyLicenseResponse {
         data: {
@@ -975,7 +982,8 @@ fn add_license(key: String) -> VerifyLicenseResponse {
     let license = request_util::post_json_api::<VerifyLicenseData, KeyData>(
         &format!("/api/license/verify",),
         &key_data,
-    );
+    )
+    .await;
     if let Ok(license) = license {
         let mut db = get_db();
         db.set("license", &key).unwrap();
@@ -1003,10 +1011,10 @@ struct VerifyLicenseData {
 }
 #[get("/api/get_license")]
 pub(crate) async fn get_license_api() -> actix_web::Result<impl Responder> {
-    let license = get_license();
+    let license = get_license().await;
     Ok(web::Json(license))
 }
-fn get_license() -> VerifyLicenseResponse {
+async fn get_license() -> VerifyLicenseResponse {
     let uid: String = machine_uid::get().unwrap();
     let result: VerifyLicenseResponse = VerifyLicenseResponse {
         data: VerifyLicenseData {
@@ -1042,7 +1050,8 @@ fn get_license() -> VerifyLicenseResponse {
     let license = request_util::post_json_api::<VerifyLicenseData, KeyData>(
         &format!("/api/license/verify",),
         &key_data,
-    );
+    )
+    .await;
     if let Ok(license) = license {
         return VerifyLicenseResponse { data: license };
     }
