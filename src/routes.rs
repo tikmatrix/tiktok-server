@@ -20,11 +20,14 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::io::Read;
+
 use std::path::Path;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::{collections::HashMap, fs::File};
+
 use uuid::Uuid;
+
 #[post("/api/account")]
 pub(crate) async fn add_account_api(
     conn: web::Data<Mutex<Connection>>,
