@@ -5,12 +5,12 @@ use crate::dao::{
     material_dao, music_dao, publish_job_dao, train_job_dao,
 };
 use crate::ddl_actor::DdlMessage;
+use crate::models::InstallFormData;
 use crate::models::{
     AccountData, AvatarData, AvatarFormData, CommonResponse, DeviceData, DialogWatcherData,
     GroupData, MaterialData, MaterialFormData, MaterialUesData, MusicData, PublishJobData,
-    ResponseData, ScriptQueryParams, TrainJobData,
+    ResponseData, TrainJobData,
 };
-use crate::models::{InstallFormData, ShellData};
 use crate::yaml_util::{ProfileConfigResponse, Rule};
 use crate::{request_util, yaml_util};
 use actix_multipart::form::MultipartForm;
@@ -556,21 +556,9 @@ pub(crate) async fn update_settings_api(
 ) -> actix_web::Result<impl Responder> {
     set_settings(&settings);
     setup_env();
-    update_agent_settings(&settings).await;
     Ok(HttpResponse::NoContent())
 }
-async fn update_agent_settings(settings: &Settings) {
-    let nodes = device_dao::list_online_agent().unwrap();
-    for node in nodes {
-        let result = request_util::post_json::<ResponseData<String>, Settings>(
-            node.ip.as_str(),
-            "/api/settings",
-            &settings,
-        )
-        .await;
-        log::info!("update agent settings result: {:?}", result);
-    }
-}
+
 fn get_db() -> PickleDb {
     PickleDb::load(
         "data/settings.db",
