@@ -58,8 +58,8 @@ pub fn list_online_device(
         query.push_str(" AND agent_ip = ? ");
         params.push(rusqlite::types::Value::Text(agent_ip));
     }
-    let adb_mode = std::env::var("ADB_MODE").unwrap_or(String::from("usb"));
-    if adb_mode == "tcp" {
+    let adb_mode = std::env::var("ADB_MODE").unwrap_or(String::from("USB"));
+    if adb_mode == "TCP" {
         query.push_str(" AND serial LIKE '%:%' ");
     } else {
         query.push_str(" AND serial NOT LIKE '%:%' ");
