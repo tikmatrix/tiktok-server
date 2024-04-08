@@ -379,68 +379,6 @@ pub(crate) async fn get_device_init_api(
     }))
 }
 
-#[post("/api/shell")]
-pub(crate) async fn shell_api(
-    web::Json(shell_data): web::Json<ShellData>,
-) -> actix_web::Result<impl Responder> {
-    let serial = shell_data.serial.clone();
-    let devices = web::block(move || device_dao::list_online_device(serial, None)).await??;
-    // 将每个设备操作转换为异步任务
-    let tasks = devices.data.into_iter().map(|device| {
-        let cmd_clone = shell_data.cmd.clone();
-        async move {
-            match request_util::get_json::<ResponseData<String>>(
-                &device.agent_ip,
-                &format!("/api/adb_shell?serial={}&cmd={}", &device.serial, cmd_clone),
-            )
-            .await
-            {
-                Ok(result) => log::debug!("{} -> shell result: {:?}", device.serial, result),
-                Err(e) => log::error!("{} -> shell error: {:?}", device.serial, e),
-            }
-        }
-    });
-    // 并发执行所有任务并等待全部完成
-    let _ = futures_util::future::join_all(tasks).await;
-    Ok(HttpResponse::NoContent())
-}
-
-#[get("/api/script")]
-pub(crate) async fn script_api(
-    web::Query(query): web::Query<ScriptQueryParams>,
-) -> actix_web::Result<impl Responder> {
-    let serial = query.serial;
-    let devices = web::block(move || device_dao::list_online_device(serial, None)).await??;
-    // 将每个设备操作转换为异步任务
-    let task = devices.data.into_iter().map(|device| {
-        let script = query.script.clone();
-        let args = query.args.clone().unwrap_or("".to_string());
-        async move {
-            match request_util::get_json::<ResponseData<String>>(
-                device.agent_ip.as_str(),
-                &format!(
-                    "/api/script?serial={}&filename={}&args={}",
-                    device.serial.as_str(),
-                    script.as_str(),
-                    args.as_str()
-                ),
-            )
-            .await
-            {
-                Ok(result) => {
-                    log::info!("{} -> script result: {:?}", device.serial, result);
-                }
-                Err(e) => {
-                    log::error!("{} -> script error: {:?}", device.serial, e);
-                }
-            }
-        }
-    });
-    // 并发执行所有任务并等待全部完成
-    let _ = futures_util::future::join_all(task).await;
-    Ok(HttpResponse::NoContent())
-}
-
 #[get("/api/group")]
 pub(crate) async fn get_group_api() -> actix_web::Result<impl Responder> {
     let group_response_data = web::block(move || group_dao::list_all()).await??;
