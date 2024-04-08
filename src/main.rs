@@ -26,7 +26,6 @@ mod offline_checker;
 mod request_util;
 mod routes;
 mod runtime_err;
-mod yaml_util;
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     // initialize logger
@@ -151,10 +150,6 @@ async fn main() -> io::Result<()> {
             .service(routes::delete_all_publish_job_api)
             .service(routes::delete_all_train_job_api)
             .service(routes::delete_all_post_comment_api)
-            .service(routes::get_proxys_api)
-            .service(routes::add_proxy_api)
-            .service(routes::get_proxy_delay_api)
-            .service(routes::update_proxy_rule_api)
             .service(routes::auth_api)
             .service(routes::add_data_analysis_api)
             .service(routes::get_data_analysis_api)

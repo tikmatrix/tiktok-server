@@ -11,8 +11,7 @@ use crate::models::{
     GroupData, MaterialData, MaterialFormData, MaterialUesData, MusicData, PublishJobData,
     ResponseData, TrainJobData,
 };
-use crate::yaml_util::{ProfileConfigResponse, Rule};
-use crate::{request_util, yaml_util};
+use crate::request_util;
 use actix_multipart::form::MultipartForm;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use local_ip_address::local_ip;
@@ -1193,69 +1192,6 @@ pub(crate) async fn delete_all_post_comment_api() -> actix_web::Result<impl Resp
         code: 0,
         data: device_response_data,
     }))
-}
-#[get("/api/proxy")]
-pub(crate) async fn get_proxys_api() -> actix_web::Result<impl Responder> {
-    let proxy_response_data = web::block(move || yaml_util::read_yaml()).await??;
-    Ok(web::Json(ProfileConfigResponse {
-        data: proxy_response_data,
-    }))
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct AddProxyData {
-    pub urls: String,
-}
-#[post("/api/proxy")]
-pub(crate) async fn add_proxy_api(
-    web::Json(data): web::Json<AddProxyData>,
-) -> actix_web::Result<impl Responder> {
-    //check proxy urls
-    let urls: Vec<String> = data
-        .urls
-        .split("\n")
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect();
-    web::block(move || yaml_util::add_proxys_to_config(urls)).await??;
-    Ok(HttpResponse::NoContent())
-}
-#[get("/api/proxy/delay")]
-pub(crate) async fn get_proxy_delay_api(
-    web::Query(query): web::Query<HashMap<String, String>>,
-) -> actix_web::Result<impl Responder> {
-    let name = query
-        .get("name")
-        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing name query parameter"))?
-        .clone();
-    let proxy_response_data = web::block(move || yaml_util::read_proxy_delay(&name)).await??;
-    Ok(web::Json(ResponseData {
-        data: proxy_response_data,
-    }))
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct UpdateProxyRuleData {
-    pub serial: String,
-    pub ip: String,
-}
-#[put("/api/proxy_rule")]
-pub(crate) async fn update_proxy_rule_api(
-    web::Json(data): web::Json<UpdateProxyRuleData>,
-) -> actix_web::Result<impl Responder> {
-    let dst_ip = yaml_util::get_one_unused_proxy();
-    if dst_ip.is_err() {
-        return Ok(web::Json(ResponseData {
-            data: "no available proxy".to_string(),
-        }));
-    }
-    let rule = Rule {
-        name: data.serial,
-        src_ip: data.ip,
-        dst_ip: dst_ip.unwrap(),
-    };
-    web::block(move || yaml_util::add_rules_to_config(rule)).await??;
-    return Ok(web::Json(ResponseData {
-        data: "success".to_string(),
-    }));
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
