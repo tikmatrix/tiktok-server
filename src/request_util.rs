@@ -11,7 +11,7 @@ pub async fn get_json<T: DeserializeOwned>(host: &str, url_path: &str) -> Result
     let response = match reqwest::get(format!("http://{}:{}{}", host, port, url_path)).await {
         Ok(response) => response,
         Err(e) => {
-            log::error!("Failed to send request: {:?}", e);
+            // log::error!("Failed to send request: {:?}", e);
             return Err(e.into());
         }
     };

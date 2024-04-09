@@ -5,14 +5,13 @@ use crate::dao::{
     material_dao, music_dao, publish_job_dao, train_job_dao,
 };
 use crate::ddl_actor::DdlMessage;
+use crate::models::InstallFormData;
 use crate::models::{
     AccountData, AvatarData, AvatarFormData, CommonResponse, DeviceData, DialogWatcherData,
     GroupData, MaterialData, MaterialFormData, MaterialUesData, MusicData, PublishJobData,
-    ResponseData, ScriptQueryParams, TrainJobData,
+    ResponseData, TrainJobData,
 };
-use crate::models::{InstallFormData, ShellData};
-use crate::yaml_util::{ProfileConfigResponse, Rule};
-use crate::{request_util, yaml_util};
+use crate::request_util;
 use actix_multipart::form::MultipartForm;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use local_ip_address::local_ip;
@@ -21,11 +20,14 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::io::Read;
+
 use std::path::Path;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::{collections::HashMap, fs::File};
+
 use uuid::Uuid;
+
 #[post("/api/account")]
 pub(crate) async fn add_account_api(
     conn: web::Data<Mutex<Connection>>,
@@ -106,6 +108,7 @@ pub(crate) async fn update_username_api(
         data: "ok".to_string(),
     }))
 }
+
 #[post("/api/install")]
 pub(crate) async fn install_api(
     MultipartForm(form): MultipartForm<InstallFormData>,
@@ -115,13 +118,7 @@ pub(crate) async fn install_api(
     let file_name = file.file_name.unwrap();
     let path = format!("upload/apk/{}", file_name);
     file.file.persist(path).unwrap();
-    let my_local_ip = local_ip();
-    if let Ok(my_local_ip) = my_local_ip {
-        log::debug!("my_local_ip: {:?}", my_local_ip);
-    } else {
-        log::error!("my_local_ip: {:?}", my_local_ip);
-    }
-    let url: String = format!("http://{}:7090/apk/{}", my_local_ip.unwrap(), file_name);
+    let url: String = format!("apk/{}", file_name);
     let devices = web::block(move || device_dao::list_online_device(serial, None)).await??;
     let task = devices.data.into_iter().map(|device| {
         let url = url.clone();
@@ -379,68 +376,6 @@ pub(crate) async fn get_device_init_api(
     }))
 }
 
-#[post("/api/shell")]
-pub(crate) async fn shell_api(
-    web::Json(shell_data): web::Json<ShellData>,
-) -> actix_web::Result<impl Responder> {
-    let serial = shell_data.serial.clone();
-    let devices = web::block(move || device_dao::list_online_device(serial, None)).await??;
-    // 将每个设备操作转换为异步任务
-    let tasks = devices.data.into_iter().map(|device| {
-        let cmd_clone = shell_data.cmd.clone();
-        async move {
-            match request_util::get_json::<ResponseData<String>>(
-                &device.agent_ip,
-                &format!("/api/adb_shell?serial={}&cmd={}", &device.serial, cmd_clone),
-            )
-            .await
-            {
-                Ok(result) => log::debug!("{} -> shell result: {:?}", device.serial, result),
-                Err(e) => log::error!("{} -> shell error: {:?}", device.serial, e),
-            }
-        }
-    });
-    // 并发执行所有任务并等待全部完成
-    let _ = futures_util::future::join_all(tasks).await;
-    Ok(HttpResponse::NoContent())
-}
-
-#[get("/api/script")]
-pub(crate) async fn script_api(
-    web::Query(query): web::Query<ScriptQueryParams>,
-) -> actix_web::Result<impl Responder> {
-    let serial = query.serial;
-    let devices = web::block(move || device_dao::list_online_device(serial, None)).await??;
-    // 将每个设备操作转换为异步任务
-    let task = devices.data.into_iter().map(|device| {
-        let script = query.script.clone();
-        let args = query.args.clone().unwrap_or("".to_string());
-        async move {
-            match request_util::get_json::<ResponseData<String>>(
-                device.agent_ip.as_str(),
-                &format!(
-                    "/api/script?serial={}&filename={}&args={}",
-                    device.serial.as_str(),
-                    script.as_str(),
-                    args.as_str()
-                ),
-            )
-            .await
-            {
-                Ok(result) => {
-                    log::info!("{} -> script result: {:?}", device.serial, result);
-                }
-                Err(e) => {
-                    log::error!("{} -> script error: {:?}", device.serial, e);
-                }
-            }
-        }
-    });
-    // 并发执行所有任务并等待全部完成
-    let _ = futures_util::future::join_all(task).await;
-    Ok(HttpResponse::NoContent())
-}
-
 #[get("/api/group")]
 pub(crate) async fn get_group_api() -> actix_web::Result<impl Responder> {
     let group_response_data = web::block(move || group_dao::list_all()).await??;
@@ -618,21 +553,9 @@ pub(crate) async fn update_settings_api(
 ) -> actix_web::Result<impl Responder> {
     set_settings(&settings);
     setup_env();
-    update_agent_settings(&settings).await;
     Ok(HttpResponse::NoContent())
 }
-async fn update_agent_settings(settings: &Settings) {
-    let nodes = device_dao::list_online_agent().unwrap();
-    for node in nodes {
-        let result = request_util::post_json::<ResponseData<String>, Settings>(
-            node.ip.as_str(),
-            "/api/settings",
-            &settings,
-        )
-        .await;
-        log::info!("update agent settings result: {:?}", result);
-    }
-}
+
 fn get_db() -> PickleDb {
     PickleDb::load(
         "data/settings.db",
@@ -1267,69 +1190,6 @@ pub(crate) async fn delete_all_post_comment_api() -> actix_web::Result<impl Resp
         code: 0,
         data: device_response_data,
     }))
-}
-#[get("/api/proxy")]
-pub(crate) async fn get_proxys_api() -> actix_web::Result<impl Responder> {
-    let proxy_response_data = web::block(move || yaml_util::read_yaml()).await??;
-    Ok(web::Json(ProfileConfigResponse {
-        data: proxy_response_data,
-    }))
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct AddProxyData {
-    pub urls: String,
-}
-#[post("/api/proxy")]
-pub(crate) async fn add_proxy_api(
-    web::Json(data): web::Json<AddProxyData>,
-) -> actix_web::Result<impl Responder> {
-    //check proxy urls
-    let urls: Vec<String> = data
-        .urls
-        .split("\n")
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect();
-    web::block(move || yaml_util::add_proxys_to_config(urls)).await??;
-    Ok(HttpResponse::NoContent())
-}
-#[get("/api/proxy/delay")]
-pub(crate) async fn get_proxy_delay_api(
-    web::Query(query): web::Query<HashMap<String, String>>,
-) -> actix_web::Result<impl Responder> {
-    let name = query
-        .get("name")
-        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing name query parameter"))?
-        .clone();
-    let proxy_response_data = web::block(move || yaml_util::read_proxy_delay(&name)).await??;
-    Ok(web::Json(ResponseData {
-        data: proxy_response_data,
-    }))
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct UpdateProxyRuleData {
-    pub serial: String,
-    pub ip: String,
-}
-#[put("/api/proxy_rule")]
-pub(crate) async fn update_proxy_rule_api(
-    web::Json(data): web::Json<UpdateProxyRuleData>,
-) -> actix_web::Result<impl Responder> {
-    let dst_ip = yaml_util::get_one_unused_proxy();
-    if dst_ip.is_err() {
-        return Ok(web::Json(ResponseData {
-            data: "no available proxy".to_string(),
-        }));
-    }
-    let rule = Rule {
-        name: data.serial,
-        src_ip: data.ip,
-        dst_ip: dst_ip.unwrap(),
-    };
-    web::block(move || yaml_util::add_rules_to_config(rule)).await??;
-    return Ok(web::Json(ResponseData {
-        data: "success".to_string(),
-    }));
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
