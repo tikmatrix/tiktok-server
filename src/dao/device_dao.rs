@@ -169,14 +169,14 @@ pub fn list_online_agent() -> Result<Vec<Node>, RunTimeError> {
 }
 pub fn count_online_device() -> Result<i32, RunTimeError> {
     let conn = database::get_conn()?;
-    let adb_mode = std::env::var("ADB_MODE").unwrap_or(String::from("usb"));
+    let adb_mode = std::env::var("ADB_MODE").unwrap_or(String::from("USB"));
     let mut query = "
     SELECT count(*) as count
     FROM device 
     WHERE online = 1
 "
     .to_string();
-    if adb_mode == "tcp" {
+    if adb_mode == "TCP" {
         query.push_str(" AND serial LIKE '%:%' ");
     } else {
         query.push_str(" AND serial NOT LIKE '%:%' ");

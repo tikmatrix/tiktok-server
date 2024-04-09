@@ -108,6 +108,7 @@ pub(crate) async fn update_username_api(
         data: "ok".to_string(),
     }))
 }
+
 #[post("/api/install")]
 pub(crate) async fn install_api(
     MultipartForm(form): MultipartForm<InstallFormData>,
@@ -117,13 +118,7 @@ pub(crate) async fn install_api(
     let file_name = file.file_name.unwrap();
     let path = format!("upload/apk/{}", file_name);
     file.file.persist(path).unwrap();
-    let my_local_ip = local_ip();
-    if let Ok(my_local_ip) = my_local_ip {
-        log::debug!("my_local_ip: {:?}", my_local_ip);
-    } else {
-        log::error!("my_local_ip: {:?}", my_local_ip);
-    }
-    let url: String = format!("http://{}:7090/apk/{}", my_local_ip.unwrap(), file_name);
+    let url: String = format!("apk/{}", file_name);
     let devices = web::block(move || device_dao::list_online_device(serial, None)).await??;
     let task = devices.data.into_iter().map(|device| {
         let url = url.clone();
