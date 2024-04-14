@@ -147,7 +147,7 @@ pub fn list_runable(agent_ip: String) -> Result<PublishJobResponseData, RunTimeE
     FROM publish_job
     left join account on publish_job.account_id = account.id
     left join device on account.device = device.serial
-    WHERE publish_job.status = 0 AND device.agent_ip = ?1 
+    WHERE publish_job.status < 2 AND device.agent_ip = ?1 
     AND publish_job.start_time < datetime('now', 'localtime') 
     AND device.online = 1
     ORDER BY publish_job.id ASC
