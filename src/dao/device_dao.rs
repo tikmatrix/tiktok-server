@@ -20,7 +20,6 @@ pub fn update_init(
 ) -> Result<(), RunTimeError> {
     let _lock = conn.lock();
     let conn = database::get_conn()?;
-    // let conn = conn.lock().unwrap();
     conn.execute(
         "UPDATE device SET init = ?1 WHERE serial = ?2",
         rusqlite::params![init, serial],
@@ -84,9 +83,6 @@ pub fn list_online_device(
     Ok(DeviceResponseData { data: devices })
 }
 
-fn is_tcp_connection(serial: &str) -> bool {
-    serial.contains(":")
-}
 pub fn save(
     ddl_sender: &Arc<Mutex<Sender<DdlMessage>>>,
     device_data: DeviceData,
@@ -123,11 +119,6 @@ pub fn save(
     //不存在则插入
     log::info!("device {} not exists", device_data.serial);
     let master_ip = local_ip().unwrap().to_string();
-    let mut init = 0;
-    if is_tcp_connection(&device_data.serial) {
-        //切换tcp不用重新初始化
-        init = 1;
-    }
     ddl_sender
         .lock()
         .unwrap()
@@ -140,7 +131,7 @@ pub fn save(
                 Value::Integer(device_data.online as i64),
                 Value::Text(device_data.agent_ip),
                 Value::Text(master_ip),
-                Value::Integer(init),
+                Value::Integer(0),
             ],
         })
         .unwrap();
