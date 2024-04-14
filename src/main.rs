@@ -131,6 +131,7 @@ async fn main() -> io::Result<()> {
             .service(routes::delete_avatar_api)
             .service(routes::get_avatar_random_api)
             .service(routes::update_username_api)
+            .service(routes::update_username_device_api)
             .service(routes::get_license_api)
             .service(routes::add_license_api)
             .service(routes::count_all_account_api)

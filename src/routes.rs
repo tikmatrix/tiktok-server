@@ -108,6 +108,24 @@ pub(crate) async fn update_username_api(
         data: "ok".to_string(),
     }))
 }
+#[get("/api/update_username_device")]
+pub(crate) async fn update_username_device_api(
+    conn: web::Data<Mutex<Connection>>,
+    web::Query(query): web::Query<HashMap<String, String>>,
+) -> actix_web::Result<impl Responder> {
+    let username = query
+        .get("username")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing username query parameter"))?
+        .clone();
+    let device = query
+        .get("device")
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing device query parameter"))?
+        .clone();
+    web::block(move || account_dao::update_username_device(&conn, &username, &device)).await??;
+    Ok(web::Json(ResponseData {
+        data: "ok".to_string(),
+    }))
+}
 
 #[post("/api/install")]
 pub(crate) async fn install_api(

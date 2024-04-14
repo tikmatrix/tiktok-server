@@ -204,6 +204,30 @@ pub fn update_username(
     )?;
     Ok(())
 }
+pub fn update_username_device(
+    conn: &Mutex<Connection>,
+    username: &str,
+    device: &str,
+) -> Result<(), RunTimeError> {
+    let _lock = conn.lock();
+    let conn = database::get_conn().unwrap();
+    let result = conn
+        .execute(
+            "UPDATE account SET device = ?1 WHERE username = ?2",
+            rusqlite::params![device, username],
+        )
+        .unwrap();
+    if result == 0 {
+        //insert
+        conn.execute(
+            "INSERT INTO account (email, pwd, fans, device,group_id,username) VALUES ('', '', 0, ?1, 1, ?2)",
+            rusqlite::params![
+                device,username
+            ],
+        )?;
+    }
+    Ok(())
+}
 pub fn count_all() -> Result<i32, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare("SELECT count(*) FROM account")?;
