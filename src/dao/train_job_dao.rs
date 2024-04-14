@@ -142,7 +142,7 @@ pub fn list_runable(agent_ip: String) -> Result<TrainJobResponseData, RunTimeErr
     train_job.start_time,train_job.end_time,account.device,account.username,train_job.duration,train_job.remark FROM train_job
     left join account on train_job.account_id = account.id
     left join device on account.device = device.serial
-    WHERE train_job.status = 0 AND device.agent_ip = ?1 
+    WHERE train_job.status < 2 AND device.agent_ip = ?1 
     AND train_job.start_time < datetime('now', 'localtime') 
     AND device.online = 1
     ORDER BY train_job.id ASC

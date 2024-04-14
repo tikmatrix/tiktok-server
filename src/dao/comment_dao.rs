@@ -185,7 +185,7 @@ pub fn list_runable_comment_jobs(agent_ip: &str) -> Result<CommentJobResponseDat
             LEFT JOIN post_comment_topic_comment as b ON a.post_comment_id=b.post_comment_id and a.post_comment_topic_id=b.post_comment_topic_id and a.parent_no = b.no
             LEFT JOIN account as c ON a.account_id = c.id
             LEFT JOIN post_comment as e ON a.post_comment_id = e.id
-            WHERE ((a.status = 0 AND a.parent_no=0) OR (a.status=0 AND a.parent_no>0 AND b.status = 2 ))
+            WHERE ((a.status < 2 AND a.parent_no=0) OR (a.status=0 AND a.parent_no>0 AND b.status = 2 ))
         ) as aa
         LEFT JOIN device as bb ON aa.device = bb.serial
         WHERE bb.online = 1
