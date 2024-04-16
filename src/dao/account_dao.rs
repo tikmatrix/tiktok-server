@@ -136,7 +136,6 @@ pub fn list_account_by_device(device: String) -> Result<AccountResponseData, Run
 }
 pub fn list_account_by_group_id(group_id: i32) -> Result<AccountResponseData, RunTimeError> {
     let conn = database::get_conn()?;
-
     let mut stmt = conn.prepare(
         "
     SELECT device, email, fans, group_id, id, pwd, username FROM account

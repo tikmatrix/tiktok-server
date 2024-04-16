@@ -66,6 +66,7 @@ pub fn create_databases() -> Result<(), RunTimeError> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             title TEXT DEFAULT NULL,
+            topic TEXT DEFAULT NULL,
             auto_publish INTEGER NOT NULL DEFAULT 1,
             publish_start_time TEXT DEFAULT '02:10',
             auto_train INTEGER NOT NULL DEFAULT 1,
@@ -83,6 +84,11 @@ pub fn create_databases() -> Result<(), RunTimeError> {
         "group",
         "train_duration",
         "ALTER TABLE `group` ADD COLUMN train_duration INTEGER NOT NULL DEFAULT 300",
+    )?;
+    add_column(
+        "group",
+        "topic",
+        "ALTER TABLE `group` ADD COLUMN topic TEXT DEFAULT NULL",
     )?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS device (

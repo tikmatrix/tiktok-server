@@ -56,7 +56,7 @@ pub fn update(conn: &Mutex<Connection>, data: GroupData) -> Result<(), RunTimeEr
 pub fn list_all() -> Result<GroupResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare("SELECT id, name, title, auto_publish, auto_train, publish_start_time,
-    train_start_time,publish_type,product_link, floow_probable, like_probable, collect_probable,train_duration
+    train_start_time,publish_type,product_link, floow_probable, like_probable, collect_probable,train_duration,topic
      FROM `group` ORDER BY id ASC")?;
     let mut data = Vec::new();
     let group_iter = stmt.query_map((), |row| {
@@ -74,6 +74,7 @@ pub fn list_all() -> Result<GroupResponseData, RunTimeError> {
             like_probable: row.get(10)?,
             collect_probable: row.get(11)?,
             train_duration: row.get(12)?,
+            topic: row.get(13)?,
         })
     })?;
     for group in group_iter {
@@ -84,7 +85,7 @@ pub fn list_all() -> Result<GroupResponseData, RunTimeError> {
 pub fn list_all_auto_publish() -> Result<GroupResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare("SELECT id, name, title, auto_publish, auto_train, publish_start_time,
-    train_start_time,publish_type,product_link, floow_probable, like_probable, collect_probable,train_duration
+    train_start_time,publish_type,product_link, floow_probable, like_probable, collect_probable,train_duration,topic
      FROM `group` WHERE auto_publish = 1 ORDER BY id ASC")?;
     let mut data = Vec::new();
     let group_iter = stmt.query_map((), |row| {
@@ -102,6 +103,7 @@ pub fn list_all_auto_publish() -> Result<GroupResponseData, RunTimeError> {
             like_probable: row.get(10)?,
             collect_probable: row.get(11)?,
             train_duration: row.get(12)?,
+            topic: row.get(13)?,
         })
     })?;
     for group in group_iter {
@@ -117,7 +119,7 @@ pub fn del(id: i32) -> Result<(), RunTimeError> {
 pub fn list_all_auto_train() -> Result<GroupResponseData, RunTimeError> {
     let conn = database::get_conn()?;
     let mut stmt = conn.prepare("SELECT id, name, title,  auto_publish, auto_train, publish_start_time,
-    train_start_time,publish_type,product_link, floow_probable, like_probable, collect_probable,train_duration
+    train_start_time,publish_type,product_link, floow_probable, like_probable, collect_probable,train_duration,topic
      FROM `group` WHERE auto_train = 1 ORDER BY id ASC")?;
     let mut data = Vec::new();
     let group_iter = stmt.query_map((), |row| {
@@ -135,6 +137,7 @@ pub fn list_all_auto_train() -> Result<GroupResponseData, RunTimeError> {
             like_probable: row.get(10)?,
             collect_probable: row.get(11)?,
             train_duration: row.get(12)?,
+            topic: row.get(13)?,
         })
     })?;
     for group in group_iter {
